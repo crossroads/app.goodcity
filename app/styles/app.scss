@@ -2,6 +2,7 @@
 @import "joyride_override";
 @import "date_time_picker";
 @import "porterage_charges";
+@import "mentions";
 
 /* viewport fix for iOS devices with button overlays
    https://cordova.apache.org/docs/en/latest/core/features/splashscreen/index.html?#ios-specific-information
@@ -31,3 +32,4 @@ body {
 @import "templates/delivery/book_van";
 @import "templates/delivery/confirm_van";
 @import "ember_offline";
+@import "mentions";
