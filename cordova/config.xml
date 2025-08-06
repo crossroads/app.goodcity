@@ -42,7 +42,7 @@
     </platform>
     <platform name="ios">
         <preference name="SwiftVersion" value="5" />
-        <preference name="deployment-target" value="11.0" />
+        <preference name="deployment-target" value="13.0" />
         <preference name="Orientation" value="portrait" />
         <preference name="Fullscreen" value="true" />
         <icon height="16" src="res/ios/Icon-App-16x16@1x.png" width="16" />
