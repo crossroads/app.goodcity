@@ -306,14 +306,14 @@ workflows:
             - package_dependencies
           filters:
             branches:
-              only: /^(master|live|android-api-35)$/
+              only: /^(master|live)$/
       - android_build_and_deploy:
           requires:
             - tests
             - ember_cordova_build
           filters:
             branches:
-              only: /^(master|live|android-api-35)$/
+              only: /^(master|live)$/
       - ios_build_and_deploy:
           requires:
             - tests

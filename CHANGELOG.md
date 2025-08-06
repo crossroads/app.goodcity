@@ -1,5 +1,9 @@
 # Donor App
 
+## v0.25.2
+
+- Updated to Android API 35
+
 ## v0.24.0
 
 - Updated to XCode 15 / iOS SDK 17
