@@ -23,7 +23,6 @@
     <allow-intent href="tel:*" />
     <allow-intent href="geo:*" />
     <platform name="android">
-        <preference name="GradlePluginKotlinVersion" value="1.7.21" />
         <resource-file src="google-services.json" target="/app/google-services.json" />
         <resource-file src="res/android/notification.png" target="app/src/main/res/drawable/notification.png" />
         <preference name="AndroidLaunchMode" value="singleTop" />
