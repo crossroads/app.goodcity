@@ -309,18 +309,18 @@ workflows:
             - package_dependencies
           filters:
             branches:
-              only: /^(master|live|update-xcode-ruby)$/
+              only: /^(master|live)$/
       - android_build_and_deploy:
           requires:
             - tests
             - ember_cordova_build
           filters:
             branches:
-              only: /^(master|live|update-xcode-ruby)$/
+              only: /^(master|live)$/
       - ios_build_and_deploy:
           requires:
             - tests
             - ember_cordova_build
           filters:
             branches:
-              only: /^(master|live|update-xcode-ruby)$/
+              only: /^(master|live)$/
