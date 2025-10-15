@@ -74,8 +74,8 @@ jobs:
       JOBS: 1
     steps:
       - run: sudo apt update && sudo apt -y upgrade libu2f-udev
-      - browser-tools/install_chrome
-      - browser-tools/install_chromedriver
+      - browser-tools/install-chrome
+      - browser-tools/install-chromedriver
       - restore_cache: *restore-repo-cache
       - restore_cache: *restore-yarn-cache
       - restore_cache: *restore-bower-cache
