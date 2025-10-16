@@ -1,5 +1,13 @@
 # Donor App
 
+## v0.25.3
+
+- Update to Xcode 16.4 and Ruby 3.4.3
+
+## v0.25.2
+
+- Updated to Android API 35
+
 ## v0.24.0
 
 - Updated to XCode 15 / iOS SDK 17

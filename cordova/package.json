@@ -9,7 +9,7 @@
   "devDependencies": {
     "@havesource/cordova-plugin-push": "github:havesource/cordova-plugin-push",
     "com.nrswolf.cordova.push-notifications-status": "github:nrswolf/cordova-plugin-push-notifications-status",
-    "cordova-android": "^13.0.0",
+    "cordova-android": "^14.0.1",
     "cordova-android-support-gradle-release": "^3.0.1",
     "cordova-ios": "^7.1.1",
     "cordova-launch-review": "^4.1.1",

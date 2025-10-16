@@ -23,7 +23,6 @@
     <allow-intent href="tel:*" />
     <allow-intent href="geo:*" />
     <platform name="android">
-        <preference name="GradlePluginKotlinVersion" value="1.7.21" />
         <resource-file src="google-services.json" target="/app/google-services.json" />
         <resource-file src="res/android/notification.png" target="app/src/main/res/drawable/notification.png" />
         <preference name="AndroidLaunchMode" value="singleTop" />
@@ -43,7 +42,7 @@
     </platform>
     <platform name="ios">
         <preference name="SwiftVersion" value="5" />
-        <preference name="deployment-target" value="11.0" />
+        <preference name="deployment-target" value="13.0" />
         <preference name="Orientation" value="portrait" />
         <preference name="Fullscreen" value="true" />
         <icon height="16" src="res/ios/Icon-App-16x16@1x.png" width="16" />
