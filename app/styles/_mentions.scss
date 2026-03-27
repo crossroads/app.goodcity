@@ -1,0 +1,79 @@
+$mentioned-user-display-color: rgb(249, 193, 118);
+$mentioned-user-display-border: rgba(235,176,97,1);
+$mentioned-user-textbox-color: rgba(196,221,255,1);
+$mentioned-user-textbox-border: rgba(156,198,255,1);
+
+
+.tribute-container {
+  position: absolute;
+  display: block;
+  top: -14rem !important;
+  max-height: 10rem;
+  border-radius: 6px;
+  width: 15rem;
+  line-height: 2px;
+  top: auto;
+  overflow-y: scroll;
+  background: black;
+}
+
+.tribute-container > ul {
+  list-style-type: none;
+  margin: 0px;
+  line-height: 2rem;
+}
+
+ul > li:hover,
+.highlight {
+  background: #0079d3;
+}
+
+.item {
+  margin-left: 10px;
+  text-align: left;
+}
+
+.mentionable {
+  border: none;
+  margin: 0rem 1rem;
+  max-width: 95%;
+  background: white;
+  box-shadow: none;
+  -webkit-box-sizing: none;
+  -moz-box-sizing: none;
+  box-sizing: none;
+  transition: none;
+  margin: 0rem;
+  height: 3rem;
+  padding: 0.4rem 0.2rem;
+  display: block;
+  text-align: left;
+  color: black;
+  overflow-x: scroll;
+  max-height: 5rem;
+}
+
+.mentioned {
+  background: $mentioned-user-textbox-color;
+  border: 1.6px solid $mentioned-user-textbox-border;
+  border-radius: 5px;
+  padding: 5px;
+  color: black;
+}
+
+.mentioned-message-display {
+  background: $mentioned-user-display-color;
+  border: 1.6px solid $mentioned-user-display-border;
+  border-radius: 5px;
+  color: black;
+  padding: 7px;
+}
+
+.mentionedImage {
+  margin-left: 10px;
+  width: 1rem;
+  height: 1rem;
+  color: white;
+  border-radius: 10px;
+  background-color: white;
+}
