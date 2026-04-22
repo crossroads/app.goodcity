@@ -102,8 +102,8 @@ ENVIRONMENT=staging yarn run ember build --environment=production
 
 cd capacitor
 nvm use
-npm ci
-ENVIRONMENT=staging npm run rename:package
+yarn install --frozen-lockfile
+ENVIRONMENT=staging yarn run rename:package
 npx cap sync
 
 # Open native IDEs
@@ -118,7 +118,7 @@ Review the Capacitor upgrade guide for breaking changes, then update the Capacit
 ```shell
 cd capacitor
 nvm use
-npm install
+yarn install --frozen-lockfile
 npx cap sync
 ```
 

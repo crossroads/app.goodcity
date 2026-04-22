@@ -191,8 +191,10 @@ jobs:
               nvm install 22
               nvm use 22
             fi
-            npm ci
-            ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM npm run rename:package
+            corepack enable
+            corepack prepare yarn@1.22.22 --activate
+            yarn install --frozen-lockfile
+            ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM yarn run rename:package
             npx cap sync android
             if [ "$ENVIRONMENT" == "production" ]; then
               cd android && ./gradlew bundleRelease
@@ -246,8 +248,10 @@ jobs:
               nvm install 22
               nvm use 22
             fi
-            npm ci
-            ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM npm run rename:package
+            corepack enable
+            corepack prepare yarn@1.22.22 --activate
+            yarn install --frozen-lockfile
+            ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM yarn run rename:package
             npx cap sync ios
             mkdir -p "$CIRCLE_ARTIFACTS"
             xcodebuild \
