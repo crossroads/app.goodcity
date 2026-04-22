@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { execSync } = require("child_process");
+const { execSync, spawnSync } = require("child_process");
 
 function sh(cmd) {
   return execSync(cmd, { stdio: ["ignore", "pipe", "pipe"] }).toString("utf8");
@@ -34,8 +34,16 @@ if (!target) {
 }
 
 console.log(`Using Android target: ${target}`);
-process.exitCode = require("child_process").spawnSync(
-  "npx",
-  ["cap", "run", "android", "--target", target],
-  { stdio: "inherit" }
-).status;
+const result = spawnSync("npx", ["cap", "run", "android", "--target", target], {
+  stdio: "inherit"
+});
+
+if (result.error) {
+  console.error(result.error);
+  process.exitCode = 1;
+} else if (result.signal) {
+  console.error(`cap run android exited via signal: ${result.signal}`);
+  process.exitCode = 1;
+} else {
+  process.exitCode = result.status === null ? 1 : result.status;
+}
