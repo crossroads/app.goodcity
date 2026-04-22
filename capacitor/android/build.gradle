@@ -22,6 +22,9 @@ allprojects {
         google()
         mavenCentral()
     }
+    // Expose variables.gradle pins to library subprojects (e.g. @capacitor/push-notifications
+    // reads project.hasProperty('firebaseMessagingVersion') then rootProject.ext).
+    ext.firebaseMessagingVersion = rootProject.ext.firebaseMessagingVersion
 }
 
 task clean(type: Delete) {
