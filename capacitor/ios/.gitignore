@@ -5,6 +5,9 @@ App/App/public
 DerivedData
 xcuserdata
 
+# Xcode workspace metadata (generated)
+App/App.xcworkspace/contents.xcworkspacedata
+
 # Cordova plugins for Capacitor
 capacitor-cordova-ios-plugins
 
