@@ -119,14 +119,35 @@ export default Ember.Service.extend({
         }
 
         const push = getPushNotificationsPlugin();
-        if (!push || typeof push.requestPermissions !== "function") {
+        if (
+          !push ||
+          typeof push.requestPermissions !== "function" ||
+          typeof push.register !== "function"
+        ) {
           logError(
-            "cordova service: initiatePushNotifications: PushNotifications plugin missing or invalid."
+            "cordova service: initiatePushNotifications: PushNotifications plugin missing or invalid (need requestPermissions and register)."
           );
           return;
         }
 
-        await push.requestPermissions();
+        const perms = await push.requestPermissions();
+        if (!perms || perms.receive !== "granted") {
+          logWarn(
+            "cordova service: initiatePushNotifications: permission not granted (receive=" +
+              (perms && perms.receive ? perms.receive : "unknown") +
+              "); skipping push.register."
+          );
+          return;
+        }
+
+        try {
+          await push.register();
+        } catch (regErr) {
+          logError(
+            "cordova service: initiatePushNotifications: push.register failed",
+            regErr
+          );
+        }
       } catch (e) {
         logError("cordova service: initiatePushNotifications failed", e);
       }
