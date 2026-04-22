@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">GoodCity</string>
+    <string name="title_activity_main">GoodCity</string>
+    <string name="package_name">hk.goodcity.app</string>
+    <string name="custom_url_scheme">hk.goodcity.app</string>
+</resources>
