@@ -1,5 +1,50 @@
 /* jshint node: true */
 const pkgJson = require("../package.json");
+const url = require("url");
+
+function uniqueStrings(values) {
+  const out = [];
+  const seen = {};
+  (values || []).forEach(v => {
+    if (!v) return;
+    if (seen[v]) return;
+    seen[v] = true;
+    out.push(v);
+  });
+  return out;
+}
+
+// Adds http(s) origins plus ws/wss equivalents for websocket-capable hosts.
+function cspConnectOriginsFromAppUrl(urlString) {
+  if (!urlString) return [];
+
+  let parsed;
+  try {
+    parsed = new url.URL(urlString);
+  } catch (e) {
+    return [];
+  }
+
+  const origins = [parsed.origin];
+
+  if (parsed.protocol === "https:") {
+    origins.push("wss://" + parsed.host);
+    origins.push("ws://" + parsed.host);
+  } else if (parsed.protocol === "http:") {
+    origins.push("ws://" + parsed.host);
+    origins.push("wss://" + parsed.host);
+  } else if (parsed.protocol === "wss:") {
+    origins.push("https://" + parsed.host);
+    origins.push("http://" + parsed.host);
+    origins.push("ws://" + parsed.host);
+  } else if (parsed.protocol === "ws:") {
+    origins.push("http://" + parsed.host);
+    origins.push("https://" + parsed.host);
+    origins.push("wss://" + parsed.host);
+  }
+
+  return uniqueStrings(origins);
+}
 
 module.exports = function(environment) {
   environment = process.env.ENVIRONMENT || environment || "development";
@@ -102,18 +147,24 @@ module.exports = function(environment) {
     ENV.APP.SOCKETIO_WEBSERVICE_URL =
       process.env.SOCKETIO_WEBSERVICE_URL || "http://localhost:1337/goodcity";
 
-    ENV.contentSecurityPolicy["connect-src"] = [
-      "http://localhost:4200",
-      "http://localhost:3000",
-      "http://localhost:1337",
-      "ws://localhost:1337",
-      "wss://localhost:1337",
-      "https://api-staging.goodcity.hk",
-      "https://socket-staging.goodcity.hk",
-      "https://api.cloudinary.com",
-      "https://api.rollbar.com",
-      "https://www.google-analytics.com"
-    ].join(" ");
+    ENV.contentSecurityPolicy["connect-src"] = uniqueStrings(
+      [
+        "http://localhost:4200",
+        "http://localhost:3000",
+        "http://localhost:1337",
+        "ws://localhost:1337",
+        "wss://localhost:1337",
+        "https://api-staging.goodcity.hk",
+        "https://socket-staging.goodcity.hk",
+        "wss://socket-staging.goodcity.hk",
+        "ws://socket-staging.goodcity.hk",
+        "https://api.cloudinary.com",
+        "https://api.rollbar.com",
+        "https://www.google-analytics.com"
+      ]
+        .concat(cspConnectOriginsFromAppUrl(ENV.APP.API_HOST_URL))
+        .concat(cspConnectOriginsFromAppUrl(ENV.APP.SOCKETIO_WEBSERVICE_URL))
+    ).join(" ");
     //Only added for development env. to fix issue related to BLOB: object
     ENV.contentSecurityPolicy["img-src"] = [
       "http://localhost:4200",
