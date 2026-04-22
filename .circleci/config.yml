@@ -233,7 +233,7 @@ jobs:
     working_directory: ~/code
     shell: /bin/bash --login -eo pipefail
     environment:
-      CIRCLE_ARTIFACTS: /Users/distiller/code/cordova/platforms/ios/build/Release-iphoneos
+      CIRCLE_ARTIFACTS: /Users/distiller/code/capacitor/ios/build/export
       HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
       - checkout
@@ -258,18 +258,46 @@ jobs:
       - run:
           name: Build iOS app
           command: |
-            npm install cordova@12
-            node rename_package.js
-            bundle exec yarn run cordova platform add ios@7
             UUID=`openssl smime -inform der -verify -noverify -in "/Users/distiller/Library/MobileDevice/Provisioning Profiles/app-${ENVIRONMENT}.mobileprovision" | grep -A 1 UUID | sed "s@.*<string>\(.*\)</string>.*@\1@" | tail -n 1`
-            PACKAGE_TYPE=$(if [ "$ENVIRONMENT" == "production" ]; then echo app-store; else echo development; fi)
+            EXPORT_METHOD=$(if [ "$ENVIRONMENT" == "production" ]; then echo app-store; else echo development; fi)
             CODE_SIGN_IDENTITY=$(if [ "$ENVIRONMENT" == "production" ]; then echo 'iPhone Distribution'; else echo 'iPhone Developer'; fi)
-            bundle exec yarn run cordova build ios --release --device --codeSignIdentity="${CODE_SIGN_IDENTITY}" --developmentTeam="6B8FS8W94M" \
-               --packageType="${PACKAGE_TYPE}" --automaticProvisioning=true  --buildFlag="IPHONEOS_DEPLOYMENT_TARGET=13" \
-               --provisioningProfile="${UUID}"
-          working_directory: cordova
+            cd capacitor
+            npm ci
+            ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM npm run rename:package
+            npx cap sync ios
+            mkdir -p "$CIRCLE_ARTIFACTS"
+            xcodebuild \
+              -workspace ios/App/App.xcworkspace \
+              -scheme App \
+              -configuration Release \
+              -archivePath ios/build/App.xcarchive \
+              -destination "generic/platform=iOS" \
+              archive \
+              DEVELOPMENT_TEAM="6B8FS8W94M" \
+              CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY}" \
+              PROVISIONING_PROFILE="${UUID}" \
+              IPHONEOS_DEPLOYMENT_TARGET=13
+            cat > ios/build/ExportOptions.plist <<EOF
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+              <dict>
+                <key>method</key>
+                <string>${EXPORT_METHOD}</string>
+                <key>signingStyle</key>
+                <string>manual</string>
+                <key>teamID</key>
+                <string>6B8FS8W94M</string>
+              </dict>
+            </plist>
+            EOF
+            xcodebuild \
+              -exportArchive \
+              -archivePath ios/build/App.xcarchive \
+              -exportOptionsPlist ios/build/ExportOptions.plist \
+              -exportPath "$CIRCLE_ARTIFACTS"
       - store_artifacts:
-          path: cordova/platforms/ios/build/Release-iphoneos
+          path: capacitor/ios/build/export
       - run:
           name: Release ios build
           command: bundle exec fastlane ios ${ENVIRONMENT}
