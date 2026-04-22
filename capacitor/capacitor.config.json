@@ -1,5 +1,10 @@
 {
   "appId": "hk.goodcity.app",
   "appName": "GoodCity",
-  "webDir": "../dist"
+  "webDir": "../dist",
+  "plugins": {
+    "PushNotifications": {
+      "presentationOptions": ["badge", "sound", "alert"]
+    }
+  }
 }

@@ -1,5 +1,38 @@
 import Ember from "ember";
 
+function logError(message, error) {
+  if (Ember.Logger && typeof Ember.Logger.error === "function") {
+    Ember.Logger.error(message, error);
+  } else {
+    console.error(message, error);
+  }
+}
+
+function logWarn(message) {
+  if (Ember.Logger && typeof Ember.Logger.warn === "function") {
+    Ember.Logger.warn(message);
+  } else {
+    console.warn(message);
+  }
+}
+
+function isNativeCapacitorShell() {
+  const cap =
+    typeof window !== "undefined" && window.Capacitor ? window.Capacitor : null;
+  if (!cap || typeof cap.getPlatform !== "function") {
+    return false;
+  }
+  const platform = cap.getPlatform();
+  return platform === "ios" || platform === "android";
+}
+
+function getPushNotificationsPlugin() {
+  const cap =
+    typeof window !== "undefined" && window.Capacitor ? window.Capacitor : null;
+  const plugins = cap && cap.Plugins ? cap.Plugins : null;
+  return plugins ? plugins.PushNotifications : null;
+}
+
 export default Ember.Service.extend({
   isIOS() {
     try {
@@ -40,17 +73,20 @@ export default Ember.Service.extend({
   },
 
   verifyIosNotificationSetting(onEnabled, onDisabled) {
-    // Until we fully migrate push notifications, prefer the safe/explicit path:
-    // check (and request) iOS push permission via Capacitor when available.
-    // If we can't check, treat it as disabled so the UI can guide the user.
+    // Check (and request) notification permission via @capacitor/push-notifications
+    // on native shells. In the browser, behave as disabled without noisy logs.
     (async () => {
       try {
-        const cap =
-          typeof window !== "undefined" ? window.Capacitor : undefined;
-        const plugins = cap && cap.Plugins ? cap.Plugins : undefined;
-        const push = plugins ? plugins.PushNotifications : undefined;
+        if (!isNativeCapacitorShell()) {
+          if (typeof onDisabled === "function") onDisabled();
+          return;
+        }
 
+        const push = getPushNotificationsPlugin();
         if (!push || typeof push.checkPermissions !== "function") {
+          logError(
+            "cordova service: Capacitor PushNotifications is missing or invalid. Install @capacitor/push-notifications and run cap sync."
+          );
           if (typeof onDisabled === "function") onDisabled();
           return;
         }
@@ -66,23 +102,34 @@ export default Ember.Service.extend({
           if (typeof onDisabled === "function") onDisabled();
         }
       } catch (e) {
+        logError("cordova service: verifyIosNotificationSetting failed", e);
         if (typeof onDisabled === "function") onDisabled();
       }
     })();
   },
 
   initiatePushNotifications() {
-    // Best-effort permission prompt for Capacitor push notifications.
     (async () => {
       try {
-        const cap =
-          typeof window !== "undefined" ? window.Capacitor : undefined;
-        const plugins = cap && cap.Plugins ? cap.Plugins : undefined;
-        const push = plugins ? plugins.PushNotifications : undefined;
+        if (!isNativeCapacitorShell()) {
+          logWarn(
+            "cordova service: initiatePushNotifications called outside a native Capacitor shell; skipping."
+          );
+          return;
+        }
 
-        if (!push || typeof push.requestPermissions !== "function") return;
+        const push = getPushNotificationsPlugin();
+        if (!push || typeof push.requestPermissions !== "function") {
+          logError(
+            "cordova service: initiatePushNotifications: PushNotifications plugin missing or invalid."
+          );
+          return;
+        }
+
         await push.requestPermissions();
-      } catch (e) {}
+      } catch (e) {
+        logError("cordova service: initiatePushNotifications failed", e);
+      }
     })();
   }
 });
