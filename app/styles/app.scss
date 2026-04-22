@@ -19,6 +19,11 @@ body {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+// Hide iOS "smart app banner" inside native shells (Capacitor/Cordova)
+.is-native-shell .ember-smart-banner {
+  display: none !important;
+}
+
 /* template specific */
 @import "templates/tour";
 @import "templates/account";
