@@ -17,15 +17,50 @@ export default Ember.Service.extend({
     );
   },
 
-  verifyIosNotificationSetting(onEnabled, _onDisabled) {
-    // Cordova used native settings checks; in Capacitor we currently assume enabled
-    // and route users through normal flow. This is a no-op compatibility shim.
-    if (typeof onEnabled === "function") {
-      onEnabled();
-    }
+  verifyIosNotificationSetting(onEnabled, onDisabled) {
+    // Until we fully migrate push notifications, prefer the safe/explicit path:
+    // check (and request) iOS push permission via Capacitor when available.
+    // If we can't check, treat it as disabled so the UI can guide the user.
+    (async () => {
+      try {
+        const cap =
+          typeof window !== "undefined" ? window.Capacitor : undefined;
+        const plugins = cap && cap.Plugins ? cap.Plugins : undefined;
+        const push = plugins ? plugins.PushNotifications : undefined;
+
+        if (!push || typeof push.checkPermissions !== "function") {
+          if (typeof onDisabled === "function") onDisabled();
+          return;
+        }
+
+        let perms = await push.checkPermissions();
+        if (perms && perms.receive === "prompt") {
+          perms = await push.requestPermissions();
+        }
+
+        if (perms && perms.receive === "granted") {
+          if (typeof onEnabled === "function") onEnabled();
+        } else {
+          if (typeof onDisabled === "function") onDisabled();
+        }
+      } catch (e) {
+        if (typeof onDisabled === "function") onDisabled();
+      }
+    })();
   },
 
   initiatePushNotifications() {
-    // No-op shim (push setup will be handled via Capacitor plugins).
+    // Best-effort permission prompt for Capacitor push notifications.
+    (async () => {
+      try {
+        const cap =
+          typeof window !== "undefined" ? window.Capacitor : undefined;
+        const plugins = cap && cap.Plugins ? cap.Plugins : undefined;
+        const push = plugins ? plugins.PushNotifications : undefined;
+
+        if (!push || typeof push.requestPermissions !== "function") return;
+        await push.requestPermissions();
+      } catch (e) {}
+    })();
   }
 });
