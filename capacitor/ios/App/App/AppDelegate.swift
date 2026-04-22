@@ -1,5 +1,6 @@
 import UIKit
 import Capacitor
+import WebKit
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -7,7 +8,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Ensure the native view behind WKWebView matches app background
+        // so the iOS safe-area/top inset doesn't appear as a white bar.
+        let appBackground = UIColor(red: 0.043, green: 0.169, blue: 0.302, alpha: 1.0) // ~ #0b2b4d
+        window?.backgroundColor = appBackground
+
+        if let bridgeVC = window?.rootViewController as? CAPBridgeViewController {
+            bridgeVC.view.backgroundColor = appBackground
+
+            if let webView = bridgeVC.webView {
+                webView.isOpaque = false
+                webView.backgroundColor = .clear
+                webView.scrollView.backgroundColor = .clear
+            }
+        }
+
         return true
     }
 
