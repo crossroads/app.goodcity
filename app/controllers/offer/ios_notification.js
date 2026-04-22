@@ -51,8 +51,9 @@ export default Ember.Controller.extend({
 
     openSettings() {
       // Cordova-specific behavior removed; settings deep-linking (if desired)
-      // should be implemented via a Capacitor plugin.
+      // should be implemented via a Capacitor plugin (e.g. open app settings).
       console.log("openSettings not implemented for Capacitor");
+      return false;
     }
   }
 });
