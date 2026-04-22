@@ -19,6 +19,12 @@ body {
   padding-top: env(safe-area-inset-top, 0px);
 }
 
+/* shared-goodcity: .sticky_title_bar { position: fixed; top: 0 } — fixed layers use the
+   viewport, so they ignore body safe-area padding and collide with the status bar. */
+.sticky_title_bar {
+  top: env(safe-area-inset-top, 0px);
+}
+
 // Hide iOS "smart app banner" inside native shells (Capacitor/Cordova)
 .is-native-shell .ember-smart-banner {
   display: none !important;
