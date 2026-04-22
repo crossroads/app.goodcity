@@ -46,6 +46,7 @@ orbs:
   azure-cli: circleci/azure-cli@1.2.2
   browser-tools: circleci/browser-tools@2.2.0
   ruby: circleci/ruby@2.5.4
+  node: circleci/node@7.2.1
 
 jobs:
   checkout_code:
@@ -186,16 +187,13 @@ jobs:
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n app-$ENVIRONMENT-google-services.json -f ~/code/capacitor/android/app/google-services.json
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n goodcity.keystore -f ~/code/capacitor/android/app/goodcity.keystore
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n google-play-key.json -f ~/code/fastlane/google-play-key.json
+      - node/install:
+          node-version: "22.14.0"
+          yarn-version: "1.22.22"
       - run:
           name: Build android app
           command: |
             cd capacitor
-            if command -v nvm >/dev/null 2>&1; then
-              nvm install 22
-              nvm use 22
-            fi
-            corepack enable
-            corepack prepare yarn@1.22.22 --activate
             yarn install --frozen-lockfile
             ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM yarn run rename:package
             npx cap sync android
@@ -240,6 +238,9 @@ jobs:
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n AuthKey_${APPSTORE_CONNECT_API_KEY_ID}.p8 -f ~/code/fastlane/AuthKey_${APPSTORE_CONNECT_API_KEY_ID}.p8
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n hk.goodcity.${ENVIRONMENT}.p12 -f ~/code/fastlane/hk.goodcity.${ENVIRONMENT}.p12
       - run: bundle exec fastlane ios prepare_certificates cert:hk.goodcity.${ENVIRONMENT}.p12
+      - node/install:
+          node-version: "22.14.0"
+          yarn-version: "1.22.22"
       - run:
           name: Build iOS app
           command: |
@@ -247,12 +248,6 @@ jobs:
             EXPORT_METHOD=$(if [ "$ENVIRONMENT" == "production" ]; then echo app-store; else echo development; fi)
             CODE_SIGN_IDENTITY=$(if [ "$ENVIRONMENT" == "production" ]; then echo 'iPhone Distribution'; else echo 'iPhone Developer'; fi)
             cd capacitor
-            if command -v nvm >/dev/null 2>&1; then
-              nvm install 22
-              nvm use 22
-            fi
-            corepack enable
-            corepack prepare yarn@1.22.22 --activate
             yarn install --frozen-lockfile
             ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM yarn run rename:package
             npx cap sync ios
@@ -294,7 +289,6 @@ jobs:
           command: bundle exec fastlane ios ${ENVIRONMENT}
 
 workflows:
-  version: 2
   build-test-and-deploy:
     jobs:
       - checkout_code
