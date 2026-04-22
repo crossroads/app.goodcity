@@ -36,8 +36,23 @@ capConfig.appName = appName;
 fs.writeFileSync(capConfigPath, JSON.stringify(capConfig, null, 2) + "\n");
 
 // --- Android: android/app/build.gradle ---
-const androidGradlePath = path.join(__dirname, "android", "app", "build.gradle");
+const androidGradlePath = path.join(
+  __dirname,
+  "android",
+  "app",
+  "build.gradle"
+);
 let androidGradle = fs.readFileSync(androidGradlePath, "utf8");
+
+androidGradle = androidGradle.replace(
+  /applicationId\s+"[^"]*"/,
+  `applicationId "${appId}"`
+);
+
+androidGradle = androidGradle.replace(
+  /namespace\s+"[^"]*"/,
+  `namespace "${appId}"`
+);
 
 androidGradle = androidGradle.replace(
   /versionName\s+"[^"]*"/,
@@ -64,7 +79,10 @@ const pbxprojPath = path.join(
 );
 let pbxproj = fs.readFileSync(pbxprojPath, "utf8");
 
-pbxproj = pbxproj.replace(/MARKETING_VERSION = [^;]+;/g, `MARKETING_VERSION = ${appVersion};`);
+pbxproj = pbxproj.replace(
+  /MARKETING_VERSION = [^;]+;/g,
+  `MARKETING_VERSION = ${appVersion};`
+);
 
 if (hasBuildNum) {
   pbxproj = pbxproj.replace(
@@ -93,7 +111,8 @@ console.log(`Set app id: ${appId}`);
 console.log(`Set app name: ${appName}`);
 console.log(`Set app version: ${appVersion}`);
 if (hasBuildNum) {
-  console.log(`Set Android version code: ${ANDROID_BUILD_VERSION_SEED + circleBuildNum}`);
+  console.log(
+    `Set Android version code: ${ANDROID_BUILD_VERSION_SEED + circleBuildNum}`
+  );
   console.log(`Set iOS bundle version: ${circleBuildNum}`);
 }
-
