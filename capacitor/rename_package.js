@@ -15,6 +15,40 @@ const path = require("path");
 
 const ANDROID_BUILD_VERSION_SEED = 270000000;
 
+function fail(message) {
+  console.error(message);
+  process.exit(1);
+}
+
+function cloneRegExp(re) {
+  return new RegExp(re.source, re.flags);
+}
+
+// Fail fast if a replacement didn't apply, but allow idempotent reruns when the
+// file already contains the intended final value.
+function replaceRequired(contents, filePath, label, pattern, replacement) {
+  const before = contents;
+  const hasMatch = cloneRegExp(pattern).test(before);
+  const next = before.replace(pattern, replacement);
+
+  if (next === before) {
+    if (hasMatch) {
+      const matched = cloneRegExp(pattern).exec(before);
+      const matchedText = matched && matched[0] ? matched[0] : null;
+      if (matchedText && matchedText === replacement) {
+        return next;
+      }
+    } else if (next.includes(replacement)) {
+      return next;
+    }
+    fail(
+      `rename_package: failed applying "${label}" in ${filePath}: output was unchanged (hasMatch=${hasMatch})`
+    );
+  }
+
+  return next;
+}
+
 const environment = process.env.ENVIRONMENT || "development";
 const staging = environment !== "production";
 
@@ -44,24 +78,36 @@ const androidGradlePath = path.join(
 );
 let androidGradle = fs.readFileSync(androidGradlePath, "utf8");
 
-androidGradle = androidGradle.replace(
+androidGradle = replaceRequired(
+  androidGradle,
+  androidGradlePath,
+  "Android applicationId",
   /applicationId\s+"[^"]*"/,
   `applicationId "${appId}"`
 );
 
-androidGradle = androidGradle.replace(
+androidGradle = replaceRequired(
+  androidGradle,
+  androidGradlePath,
+  "Android namespace",
   /namespace\s+"[^"]*"/,
   `namespace "${appId}"`
 );
 
-androidGradle = androidGradle.replace(
+androidGradle = replaceRequired(
+  androidGradle,
+  androidGradlePath,
+  "Android versionName",
   /versionName\s+"[^"]*"/,
   `versionName "${appVersion}"`
 );
 
 if (hasBuildNum) {
   const versionCode = ANDROID_BUILD_VERSION_SEED + circleBuildNum;
-  androidGradle = androidGradle.replace(
+  androidGradle = replaceRequired(
+    androidGradle,
+    androidGradlePath,
+    "Android versionCode",
     /versionCode\s+\d+/,
     `versionCode ${versionCode}`
   );
@@ -81,11 +127,17 @@ const androidStringsPath = path.join(
   "strings.xml"
 );
 let androidStrings = fs.readFileSync(androidStringsPath, "utf8");
-androidStrings = androidStrings.replace(
+androidStrings = replaceRequired(
+  androidStrings,
+  androidStringsPath,
+  "Android strings.xml package_name",
   /<string name="package_name">[^<]*<\/string>/,
   `<string name="package_name">${appId}</string>`
 );
-androidStrings = androidStrings.replace(
+androidStrings = replaceRequired(
+  androidStrings,
+  androidStringsPath,
+  "Android strings.xml custom_url_scheme",
   /<string name="custom_url_scheme">[^<]*<\/string>/,
   `<string name="custom_url_scheme">${appId}</string>`
 );
@@ -101,19 +153,28 @@ const pbxprojPath = path.join(
 );
 let pbxproj = fs.readFileSync(pbxprojPath, "utf8");
 
-pbxproj = pbxproj.replace(
+pbxproj = replaceRequired(
+  pbxproj,
+  pbxprojPath,
+  "iOS MARKETING_VERSION",
   /MARKETING_VERSION = [^;]+;/g,
   `MARKETING_VERSION = ${appVersion};`
 );
 
 if (hasBuildNum) {
-  pbxproj = pbxproj.replace(
+  pbxproj = replaceRequired(
+    pbxproj,
+    pbxprojPath,
+    "iOS CURRENT_PROJECT_VERSION",
     /CURRENT_PROJECT_VERSION = [^;]+;/g,
     `CURRENT_PROJECT_VERSION = ${circleBuildNum};`
   );
 }
 
-pbxproj = pbxproj.replace(
+pbxproj = replaceRequired(
+  pbxproj,
+  pbxprojPath,
+  "iOS PRODUCT_BUNDLE_IDENTIFIER",
   /PRODUCT_BUNDLE_IDENTIFIER = [^;]+;/g,
   `PRODUCT_BUNDLE_IDENTIFIER = ${appId};`
 );
@@ -123,7 +184,10 @@ fs.writeFileSync(pbxprojPath, pbxproj);
 // --- iOS: Info.plist display name ---
 const infoPlistPath = path.join(__dirname, "ios", "App", "App", "Info.plist");
 let infoPlist = fs.readFileSync(infoPlistPath, "utf8");
-infoPlist = infoPlist.replace(
+infoPlist = replaceRequired(
+  infoPlist,
+  infoPlistPath,
+  "iOS Info.plist CFBundleDisplayName",
   /<key>CFBundleDisplayName<\/key>\s*<string>[^<]*<\/string>/m,
   `<key>CFBundleDisplayName</key>\n        <string>${appName}</string>`
 );
