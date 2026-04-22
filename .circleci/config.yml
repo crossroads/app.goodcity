@@ -264,7 +264,7 @@ jobs:
               DEVELOPMENT_TEAM="6B8FS8W94M" \
               CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY}" \
               PROVISIONING_PROFILE="${UUID}" \
-              IPHONEOS_DEPLOYMENT_TARGET=13
+              IPHONEOS_DEPLOYMENT_TARGET=14
             cat > ios/build/ExportOptions.plist <<EOF
             <?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
