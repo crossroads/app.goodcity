@@ -9,7 +9,12 @@ The GoodCity initiative is a new way to donate quality goods in Hong Kong. See h
 
 ## Installation
 
-Install and configure NodeJS 12 using NVM: https://github.com/creationix/nvm#install-script
+This repo uses two Node versions:
+
+- Node **12** for the legacy Ember app (root project)
+- Node **22** for the Capacitor wrapper (`./capacitor/`)
+
+Install and configure Node using NVM: https://github.com/creationix/nvm#install-script
 
 You can clone the GoodCity app repo direct:
 
@@ -96,6 +101,7 @@ CircleCI will automatically build apps for `master` and `live` branches. However
 ENVIRONMENT=staging yarn run ember build --environment=production
 
 cd capacitor
+nvm use
 npm ci
 ENVIRONMENT=staging npm run rename:package
 npx cap sync
@@ -111,6 +117,7 @@ Review the Capacitor upgrade guide for breaking changes, then update the Capacit
 
 ```shell
 cd capacitor
+nvm use
 npm install
 npx cap sync
 ```
@@ -133,7 +140,7 @@ You can run Android Studio in Windows and install the necessary node packages to
 - Install windows-build-tools to get python, VS Studio runtimes, .NET 2 SDKs etc
 
 ```
-nvm install 20
+nvm install 22
 npm install -g production windows-build-tools
 ```
 

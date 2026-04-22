@@ -187,6 +187,10 @@ jobs:
           name: Build android app
           command: |
             cd capacitor
+            if command -v nvm >/dev/null 2>&1; then
+              nvm install 22
+              nvm use 22
+            fi
             npm ci
             ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM npm run rename:package
             npx cap sync android
@@ -238,6 +242,10 @@ jobs:
             EXPORT_METHOD=$(if [ "$ENVIRONMENT" == "production" ]; then echo app-store; else echo development; fi)
             CODE_SIGN_IDENTITY=$(if [ "$ENVIRONMENT" == "production" ]; then echo 'iPhone Distribution'; else echo 'iPhone Developer'; fi)
             cd capacitor
+            if command -v nvm >/dev/null 2>&1; then
+              nvm install 22
+              nvm use 22
+            fi
             npm ci
             ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM npm run rename:package
             npx cap sync ios
