@@ -83,7 +83,7 @@ xvfb-run yarn run ember test
 
 ```shell
 # development
-yarn run ember build --environment=production
+ENVIRONMENT=production yarn run ember build --environment=production
 
 # staging (great to get instant test data if not developing API locally)
 ENVIRONMENT=staging yarn run ember build --environment=production
