@@ -121,12 +121,11 @@ jobs:
           command: |
             ENVIRONMENT=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo "production"; else echo "staging"; fi)
             APP_SHA=$(echo $CIRCLE_SHA1 | cut -c1-7)
-            EMBER_CLI_CORDOVA=0 ENVIRONMENT=${ENVIRONMENT} APP_SHA=${APP_SHA} yarn run ember build --environment=production
-      - run: mv dist/ dist-www
+            ENVIRONMENT=${ENVIRONMENT} APP_SHA=${APP_SHA} yarn run ember build --environment=production
       - persist_to_workspace:
           root: .
           paths:
-            - dist-www/
+            - dist/
 
   www_deploy:
     <<: *defaults
@@ -139,7 +138,6 @@ jobs:
       - save_cache: *save-bundler-cache
       - attach_workspace:
           at: ~/code
-      - run: mv dist-www/ dist
       - azure-cli/install
       - azure-cli/login-with-service-principal
       - run:
@@ -156,28 +154,6 @@ jobs:
             SOURCE_MAP=$(eval echo $SOURCE_MAP_WITH_VARIABLE_NAME | cut -c22-100)
             ASSET_HOST_URL=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo "https://app.goodcity.hk/assets"; else echo "https://app-staging.goodcity.hk/assets"; fi)
             curl https://api.rollbar.com/api/1/sourcemap/download -F access_token="${ROLLBAR_KEY}" -F version="${APP_VERSION}" -F minified_url=$ASSET_HOST_URL/$SOURCE_MAP
-
-  ember_cordova_build:
-    <<: *defaults
-    environment:
-      JOBS: 1 # stops ember running out of memory when building
-    steps:
-      - restore_cache: *restore-repo-cache
-      - restore_cache: *restore-yarn-cache
-      - restore_cache: *restore-bower-cache
-      - run:
-          name: Ember build
-          command: |
-            APP_SHA=$(echo $CIRCLE_SHA1 | cut -c1-7)
-            APP_SHARED_SHA=$(grep "resolved.*shared.goodcity" yarn.lock | cut -d '#' -f2 | sed 's,\",,g')
-            ENVIRONMENT=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo "production"; else echo "staging"; fi)
-            EMBER_CLI_CORDOVA=1 ENVIRONMENT=${ENVIRONMENT} yarn run ember build --environment=production
-      - run: rm -rf cordova/www && cp -R dist cordova/www
-      - persist_to_workspace:
-          root: .
-          paths:
-            - dist/
-            - cordova/www
 
   android_build_and_deploy:
     <<: *defaults
@@ -331,23 +307,17 @@ workflows:
           filters:
             branches:
               only: /^(master|live)$/
-      - ember_cordova_build:
-          requires:
-            - package_dependencies
-          filters:
-            branches:
-              only: /^(master|live)$/
       - android_build_and_deploy:
           requires:
             - tests
-            - ember_cordova_build
+            - www_build
           filters:
             branches:
               only: /^(master|live)$/
       - ios_build_and_deploy:
           requires:
             - tests
-            - ember_cordova_build
+            - www_build
           filters:
             branches:
               only: /^(master|live)$/
