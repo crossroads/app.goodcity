@@ -186,7 +186,21 @@ jobs:
       - azure-cli/login-with-service-principal
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n app-$ENVIRONMENT-google-services.json -f ~/code/capacitor/android/app/google-services.json
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n goodcity.keystore -f ~/code/capacitor/android/app/goodcity.keystore
-      - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n google-play-key.json -f ~/code/fastlane/google-play-key.json
+      - run:
+          name: Download Google Play service account key (production only)
+          command: |
+            set -eo pipefail
+            need_play_key=0
+            if [ "${CIRCLE_BRANCH}" = "live" ]; then need_play_key=1; fi
+            if [ "${CI_ENV:-}" = "production" ]; then need_play_key=1; fi
+            case "$(printf '%s' "${FASTLANE_PLAY_STORE_SCOPE:-}" | tr '[:upper:]' '[:lower:]')" in
+              *production*) need_play_key=1 ;;
+            esac
+            if [ "$need_play_key" -ne 1 ]; then
+              echo "Skipping google-play-key.json (not a production Play Store context)."
+              exit 0
+            fi
+            az storage blob download --account-name "${GOODCITY_STORAGE}" -c ci-app-secrets -n google-play-key.json -f ~/code/fastlane/google-play-key.json
       - node/install:
           node-version: "22.14.0"
           yarn-version: "1.22.22"
