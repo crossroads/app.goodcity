@@ -184,7 +184,7 @@ jobs:
       - image: cimg/android:2025.10-browsers
     environment:
       JVM_OPTS: -Xmx3200m
-      CIRCLE_ARTIFACTS: /home/circleci/code/cordova/platforms/android/build/outputs/apk
+      CIRCLE_ARTIFACTS: /home/circleci/code/cordova/platforms/android/app/build/outputs
     steps:
       - ruby/install:
           version: '3.4.3'
@@ -200,6 +200,7 @@ jobs:
           command: |
               echo 'export ENVIRONMENT=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo production; else echo staging; fi)' >> $BASH_ENV
               echo 'export PATH=$PATH:/home/circleci/code/cordova/node_modules/.bin' >> $BASH_ENV
+              echo 'if [ "$ENVIRONMENT" == "production" ]; then export AAB_FILE_PATH="/home/circleci/code/cordova/platforms/android/app/build/outputs/bundle/release/*.aab"; else export APK_FILE_PATH="/home/circleci/code/cordova/platforms/android/app/build/outputs/apk/debug/*.apk"; fi' >> $BASH_ENV
       - run: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
       - azure-cli/install
       - azure-cli/login-with-service-principal
@@ -214,14 +215,14 @@ jobs:
             cordova platform add android
             if [ "$ENVIRONMENT" == "production" ]; then
               cordova build android --release -- \
-                --packageType=apk --keystore=goodcity.keystore --storePassword="${GOODCITY_KEYSTORE_PASSWORD}" \
+                --packageType=bundle --keystore=goodcity.keystore --storePassword="${GOODCITY_KEYSTORE_PASSWORD}" \
                 --alias="${GOODCITY_KEYSTORE_ALIAS}" --password="${GOODCITY_KEYSTORE_PASSWORD}"
             else
               cordova build android --debug --device
             fi
           working_directory: cordova
       - store_artifacts:
-          path: cordova/platforms/android/app/build/outputs/apk/
+          path: cordova/platforms/android/app/build/outputs/
       - run:
           name: release android build
           command: bundle exec fastlane android ${ENVIRONMENT}
