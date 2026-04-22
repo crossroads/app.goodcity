@@ -62,7 +62,7 @@ apply from: 'capacitor.build.gradle'
 def servicesJSON = file('google-services.json')
 if (!servicesJSON.exists()) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
-} else if (!servicesJSON.text?.trim()) {
+} else if (!(servicesJSON.text ?: "").trim()) {
     logger.info("google-services.json is empty, google-services plugin not applied. Push Notifications won't work")
 } else {
     try {
