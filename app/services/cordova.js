@@ -10,7 +10,29 @@ export default Ember.Service.extend({
       }
     } catch (e) {}
 
-    // Fallback heuristic
+    // Do not treat Mobile Safari as "native iOS" for Cordova-era flows unless we
+    // are actually running in a legacy native shell (Cordova) or an explicit
+    // legacy escape hatch is enabled.
+    const legacyCordova =
+      typeof window !== "undefined" && typeof window.cordova !== "undefined";
+    const root =
+      typeof globalThis !== "undefined"
+        ? globalThis
+        : typeof window !== "undefined"
+        ? window
+        : typeof global !== "undefined"
+        ? global
+        : undefined;
+    const legacyFlag =
+      (root && root.__ENABLE_CORDOVA_LEGACY__) ||
+      (typeof process !== "undefined" &&
+        process.env &&
+        process.env.ENABLE_CORDOVA_LEGACY === "true");
+
+    if (!legacyCordova && !legacyFlag) {
+      return false;
+    }
+
     return (
       typeof navigator !== "undefined" &&
       /iPad|iPhone|iPod/.test(navigator.userAgent)
