@@ -6,8 +6,17 @@
 /* viewport fix for iOS devices with button overlays
    https://cordova.apache.org/docs/en/latest/core/features/splashscreen/index.html?#ios-specific-information
 */
+html,
 body {
-  padding: env(safe-area-inset-top, 0px);
+  margin: 0;
+  width: 100%;
+  overflow-x: hidden;
+  /* Prevent the safe-area inset from showing as white on iOS notched devices */
+  background-color: #0b2b4d;
+}
+
+body {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* template specific */
