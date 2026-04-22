@@ -7,7 +7,7 @@
 // - iOS display name (ios/App/App/Info.plist)
 //
 // ENVIRONMENT VARIABLES
-//   ENVIRONMENT = (staging|production)
+//   ENVIRONMENT = staging | production (required; no default — invalid/missing values exit non-zero)
 //   CIRCLE_BUILD_NUM = <numeric> (optional; used for Android versionCode + iOS CFBundleVersion)
 //
 const fs = require("fs");
@@ -49,8 +49,19 @@ function replaceRequired(contents, filePath, label, pattern, replacement) {
   return next;
 }
 
-const environment = process.env.ENVIRONMENT || "development";
-const staging = environment !== "production";
+const rawEnvironment = process.env.ENVIRONMENT;
+if (rawEnvironment == null || String(rawEnvironment).trim() === "") {
+  fail(
+    "rename_package: ENVIRONMENT is required. Set ENVIRONMENT=staging or ENVIRONMENT=production."
+  );
+}
+const environment = String(rawEnvironment).trim();
+if (environment !== "production" && environment !== "staging") {
+  fail(
+    `rename_package: ENVIRONMENT must be "staging" or "production" (received "${environment}").`
+  );
+}
+const staging = environment === "staging";
 
 const circleBuildNum = parseInt(process.env.CIRCLE_BUILD_NUM || "", 10);
 const hasBuildNum = !isNaN(circleBuildNum);
