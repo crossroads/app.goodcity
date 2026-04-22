@@ -20,6 +20,7 @@ public class MainActivity extends BridgeActivity {
 
     // Apply system bar styling as early as possible (splash theme can otherwise keep white bars).
     Window window = getWindow();
+    window.getDecorView().setBackgroundColor(0xFF0B2B4D);
     window.setStatusBarColor(0xFF0B2B4D);
     window.setNavigationBarColor(0xFF0B2B4D);
     WindowInsetsControllerCompat controller =

@@ -12,7 +12,9 @@
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <item name="android:background">@null</item>
+        <!-- Ensure inset padding area matches app background -->
+        <item name="android:windowBackground">@color/goodcity_blue</item>
+        <item name="android:background">@color/goodcity_blue</item>
         <item name="android:statusBarColor">@color/goodcity_blue</item>
         <item name="android:navigationBarColor">@color/goodcity_blue</item>
     </style>
