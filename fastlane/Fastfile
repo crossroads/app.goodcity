@@ -100,7 +100,16 @@ end
 platform :android do
 
   before_all do
-    ENV["SUPPLY_APK"] = ENV["TESTFAIRY_IPA_PATH"] = Dir["#{ENV['APK_FILE_PATH']}"].first
+    artifact_path =
+      if (ENV["AAB_FILE_PATH"] || "").length > 0
+        Dir[ENV["AAB_FILE_PATH"]].first
+      else
+        Dir[ENV["APK_FILE_PATH"]].first
+      end
+
+    ENV["SUPPLY_AAB"] = artifact_path if artifact_path&.end_with?(".aab")
+    ENV["SUPPLY_APK"] = artifact_path if artifact_path&.end_with?(".apk")
+    ENV["TESTFAIRY_IPA_PATH"] = artifact_path
     ENV["SUPPLY_JSON_KEY"] = File.join(Dir.pwd, "google-play-key.json")
     raise "Google Play private key file not found! (#{ENV["SUPPLY_JSON_KEY"]})" unless File.exist?(ENV["SUPPLY_JSON_KEY"])
   end
@@ -113,7 +122,8 @@ platform :android do
 
   desc "Upload to GooglePlay beta track"
   lane :production do
-    raise_if_no_env_var(["SUPPLY_APK", "SUPPLY_JSON_KEY"])
+    raise_if_no_env_var(["SUPPLY_JSON_KEY"])
+    raise "Please specify ENV VAR [AAB_FILE_PATH] or [APK_FILE_PATH]" if (ENV["SUPPLY_AAB"] || ENV["SUPPLY_APK"] || "").empty?
     supply(
       track: "beta",
       skip_upload_images: true,
