@@ -213,7 +213,7 @@ jobs:
 
   ios_build_and_deploy:
     macos:
-      xcode: "26.0.0"
+      xcode: "26.4.0"
     resource_class: m4pro.medium
     working_directory: ~/code
     shell: /bin/bash --login -eo pipefail
