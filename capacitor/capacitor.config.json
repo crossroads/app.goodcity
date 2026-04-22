@@ -1,0 +1,7 @@
+{
+  "appId": "hk.goodcity.app",
+  "appName": "GoodCity",
+  "webDir": "../dist",
+  "bundledWebRuntime": false
+}
+

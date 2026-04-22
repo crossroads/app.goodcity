@@ -1,0 +1,18 @@
+{
+  "name": "goodcity-capacitor-shell",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Capacitor native wrapper for the Ember GoodCity app (web assets built in ../dist).",
+  "scripts": {
+    "cap:sync": "cap sync",
+    "cap:open:ios": "cap open ios",
+    "cap:open:android": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/ios": "^7.0.0"
+  }
+}
+
