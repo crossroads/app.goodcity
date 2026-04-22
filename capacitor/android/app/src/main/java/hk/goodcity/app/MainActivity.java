@@ -1,6 +1,7 @@
 package hk.goodcity.app;
 
 import android.os.Build;
+import android.os.Bundle;
 import android.view.Window;
 import android.view.View;
 
@@ -13,6 +14,22 @@ import androidx.core.view.WindowInsetsCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+  @Override
+  protected void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+
+    // Apply system bar styling as early as possible (splash theme can otherwise keep white bars).
+    Window window = getWindow();
+    window.setStatusBarColor(0xFF0B2B4D);
+    window.setNavigationBarColor(0xFF0B2B4D);
+    WindowInsetsControllerCompat controller =
+      WindowCompat.getInsetsController(window, window.getDecorView());
+    if (controller != null) {
+      controller.setAppearanceLightStatusBars(false);
+      controller.setAppearanceLightNavigationBars(false);
+    }
+  }
+
   @Override
   public void onWindowFocusChanged(boolean hasFocus) {
     super.onWindowFocusChanged(hasFocus);
