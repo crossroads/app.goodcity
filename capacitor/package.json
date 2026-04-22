@@ -7,7 +7,8 @@
     "rename:package": "node rename_package.js",
     "cap:sync": "cap sync",
     "cap:open:ios": "cap open ios",
-    "cap:open:android": "cap open android"
+    "cap:open:android": "cap open android",
+    "cap:run:android": "node scripts/run-android-default-emulator.js"
   },
   "dependencies": {
     "@capacitor/android": "^7.0.0",
@@ -16,4 +17,3 @@
     "@capacitor/ios": "^7.0.0"
   }
 }
-
