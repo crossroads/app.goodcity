@@ -78,10 +78,10 @@ xvfb-run yarn run ember test
 
 ```shell
 # development
-EMBER_CLI_CORDOVA=0 yarn run ember build --environment=production
+yarn run ember build --environment=production
 
 # staging (great to get instant test data if not developing API locally)
-EMBER_CLI_CORDOVA=0 ENVIRONMENT=staging yarn run ember build --environment=production
+ENVIRONMENT=staging yarn run ember build --environment=production
 ```
 
 ## Mobile builds (Capacitor)
@@ -93,7 +93,7 @@ CircleCI will automatically build apps for `master` and `live` branches. However
 
 ```shell
 # For mobile builds, it's often useful to point at api-staging.goodcity.hk for test data
-EMBER_CLI_CORDOVA=0 ENVIRONMENT=staging yarn run ember build --environment=production
+ENVIRONMENT=staging yarn run ember build --environment=production
 
 cd capacitor
 npm ci
