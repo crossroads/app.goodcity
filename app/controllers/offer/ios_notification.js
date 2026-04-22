@@ -50,15 +50,9 @@ export default Ember.Controller.extend({
     },
 
     openSettings() {
-      window.cordova.plugins.settings.open(
-        "notification_id",
-        function() {
-          console.log("opened settings");
-        },
-        function() {
-          console.log("error opened settings");
-        }
-      );
+      // Cordova-specific behavior removed; settings deep-linking (if desired)
+      // should be implemented via a Capacitor plugin.
+      console.log("openSettings not implemented for Capacitor");
     }
   }
 });

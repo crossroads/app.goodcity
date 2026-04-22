@@ -14,10 +14,10 @@
     "private": true
   },
   "scripts": {
-    "start": "EMBER_CLI_CORDOVA=0 ember serve",
-    "start:staging": "EMBER_CLI_CORDOVA=0 ENVIRONMENT=staging ember serve --port 4200",
-    "build": "EMBER_CLI_CORDOVA=0 ember build",
-    "test": "EMBER_CLI_CORDOVA=0 ember test --server"
+    "start": "ember serve",
+    "start:staging": "ENVIRONMENT=staging ember serve --port 4200",
+    "build": "ember build",
+    "test": "ember test --server"
   },
   "husky": {
     "hooks": {
@@ -43,7 +43,6 @@
     "ember-cli-code-coverage": "^0.4.2",
     "ember-cli-coffeescript": "^1.16.1",
     "ember-cli-content-security-policy": "1.0.0",
-    "ember-cli-cordova": "0.1.0-beta-2",
     "ember-cli-dependency-checker": "^2.1.1",
     "ember-cli-google-analytics": "^1.5.0",
     "ember-cli-gzip": "^1.1.3",
