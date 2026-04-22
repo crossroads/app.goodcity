@@ -172,10 +172,11 @@ jobs:
             APP_SHARED_SHA=$(grep "resolved.*shared.goodcity" yarn.lock | cut -d '#' -f2 | sed 's,\",,g')
             ENVIRONMENT=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo "production"; else echo "staging"; fi)
             EMBER_CLI_CORDOVA=1 ENVIRONMENT=${ENVIRONMENT} yarn run ember build --environment=production
-      - run: mv dist/ cordova/www
+      - run: rm -rf cordova/www && cp -R dist cordova/www
       - persist_to_workspace:
           root: .
           paths:
+            - dist/
             - cordova/www
 
   android_build_and_deploy:
