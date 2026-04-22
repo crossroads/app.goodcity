@@ -110,8 +110,12 @@ platform :android do
     ENV["SUPPLY_AAB"] = artifact_path if artifact_path&.end_with?(".aab")
     ENV["SUPPLY_APK"] = artifact_path if artifact_path&.end_with?(".apk")
     ENV["TESTFAIRY_IPA_PATH"] = artifact_path
-    ENV["SUPPLY_JSON_KEY"] = File.join(Dir.pwd, "google-play-key.json")
-    raise "Google Play private key file not found! (#{ENV["SUPPLY_JSON_KEY"]})" unless File.exist?(ENV["SUPPLY_JSON_KEY"])
+    json_key_candidates = [
+      File.join(Dir.pwd, "fastlane", "google-play-key.json"),
+      File.join(Dir.pwd, "google-play-key.json")
+    ]
+    ENV["SUPPLY_JSON_KEY"] = json_key_candidates.find { |p| File.exist?(p) }
+    raise "Google Play private key file not found! (tried #{json_key_candidates.join(", ")})" unless ENV["SUPPLY_JSON_KEY"]
   end
 
   desc "Generate staging build (just upload to TestFairy)"
