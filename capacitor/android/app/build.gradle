@@ -3,6 +3,10 @@ apply plugin: 'com.android.application'
 android {
     namespace "hk.goodcity.app"
     compileSdk rootProject.ext.compileSdkVersion
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
     signingConfigs {
         release {
             def keystorePath = System.getenv("GOODCITY_KEYSTORE_PATH") ?: "goodcity.keystore"
