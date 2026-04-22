@@ -69,6 +69,28 @@ if (hasBuildNum) {
 
 fs.writeFileSync(androidGradlePath, androidGradle);
 
+// --- Android: resources strings.xml (package_name + custom_url_scheme) ---
+const androidStringsPath = path.join(
+  __dirname,
+  "android",
+  "app",
+  "src",
+  "main",
+  "res",
+  "values",
+  "strings.xml"
+);
+let androidStrings = fs.readFileSync(androidStringsPath, "utf8");
+androidStrings = androidStrings.replace(
+  /<string name="package_name">[^<]*<\/string>/,
+  `<string name="package_name">${appId}</string>`
+);
+androidStrings = androidStrings.replace(
+  /<string name="custom_url_scheme">[^<]*<\/string>/,
+  `<string name="custom_url_scheme">${appId}</string>`
+);
+fs.writeFileSync(androidStringsPath, androidStrings);
+
 // --- iOS: project.pbxproj ---
 const pbxprojPath = path.join(
   __dirname,
