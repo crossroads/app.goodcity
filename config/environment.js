@@ -101,8 +101,11 @@ module.exports = function(environment) {
     // ENV.APP.LOG_VIEW_LOOKUPS = true;
 
     // RESTAdapter Settings
-    ENV.APP.API_HOST_URL = "http://localhost:3000";
-    ENV.APP.SOCKETIO_WEBSERVICE_URL = "http://localhost:1337/goodcity";
+    // Allow running the app in development mode while pointing at a non-local API
+    // (useful for mobile simulators/devices).
+    ENV.APP.API_HOST_URL = process.env.API_HOST_URL || "http://localhost:3000";
+    ENV.APP.SOCKETIO_WEBSERVICE_URL =
+      process.env.SOCKETIO_WEBSERVICE_URL || "http://localhost:1337/goodcity";
 
     ENV.contentSecurityPolicy["connect-src"] = [
       "http://localhost:4200",
@@ -110,6 +113,8 @@ module.exports = function(environment) {
       "http://localhost:1337",
       "ws://localhost:1337",
       "wss://localhost:1337",
+      "https://api-staging.goodcity.hk",
+      "https://socket-staging.goodcity.hk",
       "https://api.cloudinary.com",
       "https://api.rollbar.com",
       "https://www.google-analytics.com"
