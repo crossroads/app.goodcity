@@ -185,7 +185,7 @@ jobs:
       - image: cimg/android:2025.10-browsers
     environment:
       JVM_OPTS: -Xmx3200m
-      CIRCLE_ARTIFACTS: /home/circleci/code/cordova/platforms/android/app/build/outputs
+      CIRCLE_ARTIFACTS: /home/circleci/code/capacitor/android/app/build/outputs
     steps:
       - ruby/install:
           version: '3.4.3'
@@ -200,30 +200,27 @@ jobs:
           name: Setup Environment variables
           command: |
               echo 'export ENVIRONMENT=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo production; else echo staging; fi)' >> $BASH_ENV
-              echo 'export PATH=$PATH:/home/circleci/code/cordova/node_modules/.bin' >> $BASH_ENV
-              echo 'if [ "$ENVIRONMENT" == "production" ]; then export AAB_FILE_PATH="/home/circleci/code/cordova/platforms/android/app/build/outputs/bundle/release/*.aab"; else export APK_FILE_PATH="/home/circleci/code/cordova/platforms/android/app/build/outputs/apk/debug/*.apk"; fi' >> $BASH_ENV
+              echo 'if [ "$ENVIRONMENT" == "production" ]; then export AAB_FILE_PATH="/home/circleci/code/capacitor/android/app/build/outputs/bundle/release/*.aab"; else export APK_FILE_PATH="/home/circleci/code/capacitor/android/app/build/outputs/apk/debug/*.apk"; fi' >> $BASH_ENV
       - run: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
       - azure-cli/install
       - azure-cli/login-with-service-principal
-      - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n app-$ENVIRONMENT-google-services.json -f ~/code/cordova/google-services.json
-      - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n goodcity.keystore -f ~/code/cordova/goodcity.keystore
+      - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n app-$ENVIRONMENT-google-services.json -f ~/code/capacitor/android/app/google-services.json
+      - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n goodcity.keystore -f ~/code/capacitor/android/app/goodcity.keystore
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n google-play-key.json -f ~/code/fastlane/google-play-key.json
       - run:
           name: Build android app
           command: |
-            npm install cordova@12
-            node rename_package.js
-            cordova platform add android
+            cd capacitor
+            npm ci
+            ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM npm run rename:package
+            npx cap sync android
             if [ "$ENVIRONMENT" == "production" ]; then
-              cordova build android --release -- \
-                --packageType=bundle --keystore=goodcity.keystore --storePassword="${GOODCITY_KEYSTORE_PASSWORD}" \
-                --alias="${GOODCITY_KEYSTORE_ALIAS}" --password="${GOODCITY_KEYSTORE_PASSWORD}"
+              cd android && ./gradlew bundleRelease
             else
-              cordova build android --debug --device
+              cd android && ./gradlew assembleDebug
             fi
-          working_directory: cordova
       - store_artifacts:
-          path: cordova/platforms/android/app/build/outputs/
+          path: capacitor/android/app/build/outputs/
       - run:
           name: release android build
           command: bundle exec fastlane android ${ENVIRONMENT}
