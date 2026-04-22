@@ -100,16 +100,38 @@ end
 platform :android do
 
   before_all do
+    aab_pattern = (ENV["AAB_FILE_PATH"] || "").strip
+    apk_pattern = (ENV["APK_FILE_PATH"] || "").strip
+
+    aab_path = aab_pattern.empty? ? nil : Dir[aab_pattern].compact.first
+    apk_path = apk_pattern.empty? ? nil : Dir[apk_pattern].compact.first
+
     artifact_path =
-      if (ENV["AAB_FILE_PATH"] || "").length > 0
-        Dir[ENV["AAB_FILE_PATH"]].first
+      if aab_path && File.exist?(aab_path)
+        aab_path
+      elsif apk_path && File.exist?(apk_path)
+        apk_path
       else
-        Dir[ENV["APK_FILE_PATH"]].first
+        details = []
+        details << "AAB_FILE_PATH=#{aab_pattern.inspect}" unless aab_pattern.empty?
+        details << "APK_FILE_PATH=#{apk_pattern.inspect}" unless apk_pattern.empty?
+
+        UI.user_error!(
+          "Could not resolve an Android artifact from AAB/APK globs. " \
+          "Set non-empty AAB_FILE_PATH and/or APK_FILE_PATH. " \
+          "Details: #{details.join(" | ")}"
+        )
       end
 
-    ENV["SUPPLY_AAB"] = artifact_path if artifact_path&.end_with?(".aab")
-    ENV["SUPPLY_APK"] = artifact_path if artifact_path&.end_with?(".apk")
-    ENV["TESTFAIRY_IPA_PATH"] = artifact_path
+    if artifact_path && artifact_path.end_with?(".aab")
+      ENV["SUPPLY_AAB"] = artifact_path
+    end
+
+    if artifact_path && artifact_path.end_with?(".apk")
+      ENV["SUPPLY_APK"] = artifact_path
+    end
+
+    ENV["TESTFAIRY_IPA_PATH"] = artifact_path if artifact_path
     json_key_candidates = [
       File.join(Dir.pwd, "fastlane", "google-play-key.json"),
       File.join(Dir.pwd, "google-play-key.json")
