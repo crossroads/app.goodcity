@@ -11,7 +11,7 @@ The GoodCity initiative is a new way to donate quality goods in Hong Kong. See h
 
 This repo uses two Node versions:
 
-- Node **12** for the legacy Ember app (root project)
+- Node **22** for the legacy Ember app (root project)
 - Node **22** for the Capacitor wrapper (`./capacitor/`)
 
 Install and configure Node using NVM: https://github.com/creationix/nvm#install-script
