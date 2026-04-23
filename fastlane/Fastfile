@@ -131,7 +131,18 @@ platform :android do
       ENV["SUPPLY_APK"] = artifact_path
     end
 
-    ENV["TESTFAIRY_IPA_PATH"] = artifact_path if artifact_path
+    # TestFairy expects an APK path (env name is historical); never pass an .aab.
+    testfairy_apk =
+      if apk_path && File.exist?(apk_path)
+        apk_path
+      elsif artifact_path && artifact_path.end_with?(".apk")
+        artifact_path
+      end
+    if testfairy_apk
+      ENV["TESTFAIRY_IPA_PATH"] = testfairy_apk
+    else
+      ENV.delete("TESTFAIRY_IPA_PATH")
+    end
   end
 
   desc "Generate staging build (just upload to TestFairy)"
