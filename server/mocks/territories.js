@@ -2,7 +2,7 @@ module.exports = function(app) {
   var express = require("express");
   var territoriesRouter = express.Router();
   territoriesRouter.get("/", function(req, res) {
-    listing = {
+    var listing = {
       districts: [
         { id: 5, name: "Yuen Long", territory_id: 1 },
         { id: 9, name: "Kwu Tung", territory_id: 1 },
