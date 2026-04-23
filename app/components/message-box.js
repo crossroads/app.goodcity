@@ -22,19 +22,21 @@ export default Ember.Component.extend({
 
   actions: {
     btn1Click() {
-      var callbackOutput = true;
-      try {
-        if (this.btn1Callback) {
-          callbackOutput = this.btn1Callback();
-        }
-      } catch (e) {
-        callbackOutput = false;
-      }
-      Ember.RSVP.resolve(callbackOutput).then(result => {
-        if (result !== false) {
-          this.close();
-        }
-      });
+      const promise = Ember.RSVP.resolve().then(() =>
+        this.btn1Callback ? this.btn1Callback() : false
+      );
+      promise
+        .then(result => {
+          if (result !== false && !this.isDestroyed && !this.isDestroying) {
+            this.close();
+          }
+        })
+        .catch(err => {
+          if (!this.isDestroyed && !this.isDestroying) {
+            this.close();
+          }
+          throw err;
+        });
     },
 
     btn2Click() {
