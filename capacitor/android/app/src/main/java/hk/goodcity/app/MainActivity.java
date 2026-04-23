@@ -61,7 +61,10 @@ public class MainActivity extends BridgeActivity {
         Insets bars = insets.getInsets(
           WindowInsetsCompat.Type.systemBars() | WindowInsetsCompat.Type.displayCutout()
         );
-        v.setPadding(bars.left, bars.top, bars.right, bars.bottom);
+        // Do not apply bars.top here: the WebView already gets top inset via
+        // CSS env(safe-area-inset-top) on body (see app/styles/app.scss). Applying
+        // native top padding as well stacks and looks like double top spacing on Android.
+        v.setPadding(bars.left, 0, bars.right, bars.bottom);
         return insets;
       }
     );

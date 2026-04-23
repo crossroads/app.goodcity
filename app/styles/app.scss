@@ -20,7 +20,8 @@ body {
 }
 
 /* shared-goodcity: .sticky_title_bar { position: fixed; top: 0 } — fixed layers use the
-   viewport, so they ignore body safe-area padding and collide with the status bar. */
+   viewport, so they ignore body safe-area padding and collide with the status bar / cutout.
+   Top inset is handled only here (not duplicated in Android MainActivity content padding). */
 .sticky_title_bar {
   top: env(safe-area-inset-top, 0px);
 }
