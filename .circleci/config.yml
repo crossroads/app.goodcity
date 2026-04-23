@@ -243,7 +243,7 @@ jobs:
               echo 'export ENVIRONMENT=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo production; else echo staging; fi)' >> $BASH_ENV
               echo 'export PATH=$PATH:`npm bin`' >> $BASH_ENV
       - restore_cache: *restore-ios-bundler-cache
-      - run: rbenv local 3.4.3
+      - run: rbenv local 3.4.8
       - run: bundle config set --local deployment 'true' && (bundle check || bundle install --jobs=2 --retry=3)
       - save_cache: *save-ios-bundler-cache
       - run: az login --service-principal --tenant ${AZURE_SP_TENANT} -u ${AZURE_SP} -p ${AZURE_SP_PASSWORD}
