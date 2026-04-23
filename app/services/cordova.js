@@ -44,6 +44,13 @@ function getAppLauncherPlugin() {
   return plugins ? plugins.AppLauncher : null;
 }
 
+function getNativeSettingsPlugin() {
+  const cap =
+    typeof window !== "undefined" && window.Capacitor ? window.Capacitor : null;
+  const plugins = cap && cap.Plugins ? cap.Plugins : null;
+  return plugins ? plugins.NativeSettings : null;
+}
+
 /** Values expected by POST /api/v1/auth/register_device (Azure NH platform names). */
 function pushPlatformForRegisterDeviceApi(capPlatform) {
   if (capPlatform === "android") {
@@ -75,12 +82,19 @@ export default Ember.Service.extend(Ember.Evented, {
     this._super(...arguments);
     this.set("lastRegisteredPushToken", null);
     this.set("lastRegisteredPushPlatform", null);
+    this.set("lastRegisteredPushPosted", false);
     this.set("_pushRegistrationListenersAttached", false);
     this.set("_pushRegistrationTearDown", null);
+    this.addObserver("session.authToken", this, "_onSessionAuthTokenChanged");
   },
 
   willDestroy() {
     this._super(...arguments);
+    this.removeObserver(
+      "session.authToken",
+      this,
+      "_onSessionAuthTokenChanged"
+    );
     const tearDown = this.get("_pushRegistrationTearDown");
     if (typeof tearDown === "function") {
       Ember.RSVP.resolve(tearDown())
@@ -190,6 +204,24 @@ export default Ember.Service.extend(Ember.Evented, {
     logError("cordova service: PushNotifications registrationError", err);
   },
 
+  _onSessionAuthTokenChanged() {
+    Ember.run.once(this, "_replayPushTokenRegistrationAfterAuth");
+  },
+
+  _replayPushTokenRegistrationAfterAuth() {
+    const authToken = this.get("session.authToken");
+    if (!authToken) {
+      this.set("lastRegisteredPushPosted", false);
+      return;
+    }
+    const token = this.get("lastRegisteredPushToken");
+    const platform = this.get("lastRegisteredPushPlatform");
+    if (!token) {
+      return;
+    }
+    this._registerPushTokenWithApi(token, platform);
+  },
+
   _onPushRegistrationSuccess(payload) {
     const token = extractPushRegistrationToken(payload);
     if (!token) {
@@ -203,6 +235,21 @@ export default Ember.Service.extend(Ember.Evented, {
     const capPlatform =
       cap && typeof cap.getPlatform === "function" ? cap.getPlatform() : "";
 
+    if (
+      token === this.get("lastRegisteredPushToken") &&
+      capPlatform === this.get("lastRegisteredPushPlatform") &&
+      this.get("lastRegisteredPushPosted")
+    ) {
+      return;
+    }
+
+    if (
+      token !== this.get("lastRegisteredPushToken") ||
+      capPlatform !== this.get("lastRegisteredPushPlatform")
+    ) {
+      this.set("lastRegisteredPushPosted", false);
+    }
+
     this.set("lastRegisteredPushToken", token);
     this.set("lastRegisteredPushPlatform", capPlatform);
     this.trigger("pushDeviceTokenRegistered", { token, platform: capPlatform });
@@ -210,6 +257,15 @@ export default Ember.Service.extend(Ember.Evented, {
   },
 
   _registerPushTokenWithApi(registrationId, capPlatform) {
+    if (
+      registrationId &&
+      registrationId === this.get("lastRegisteredPushToken") &&
+      capPlatform === this.get("lastRegisteredPushPlatform") &&
+      this.get("lastRegisteredPushPosted")
+    ) {
+      return;
+    }
+
     const authToken = this.get("session.authToken");
     if (!authToken) {
       logWarn(
@@ -222,19 +278,30 @@ export default Ember.Service.extend(Ember.Evented, {
     new AjaxPromise("/auth/register_device", "POST", authToken, {
       registration_id: registrationId,
       platform: platform
-    }).catch(xhr => {
-      logError("cordova service: POST /auth/register_device failed", xhr);
-    });
+    })
+      .then(() => {
+        this.set("lastRegisteredPushPosted", true);
+      })
+      .catch(xhr => {
+        logError("cordova service: POST /auth/register_device failed", xhr);
+      });
   },
 
   isIOS() {
+    let cap;
     try {
       // Prefer Capacitor platform detection when available
-      const cap = typeof window !== "undefined" ? window.Capacitor : undefined;
+      cap = typeof window !== "undefined" ? window.Capacitor : undefined;
       if (cap && typeof cap.getPlatform === "function") {
         return cap.getPlatform() === "ios";
       }
-    } catch (e) {}
+    } catch (e) {
+      var debug = console.debug;
+      if (Ember.Logger && typeof Ember.Logger.debug === "function") {
+        debug = Ember.Logger.debug.bind(Ember.Logger);
+      }
+      debug("cordova service: isIOS Capacitor platform check failed", e, cap);
+    }
 
     // Do not treat Mobile Safari as "native iOS" for Cordova-era flows unless we
     // are actually running in a legacy native shell (Cordova) or an explicit
@@ -268,16 +335,14 @@ export default Ember.Service.extend(Ember.Evented, {
   },
 
   /**
-   * Opens system settings for this app on native Capacitor (iOS uses the
-   * `app-settings:` URL via the App Launcher bridge).
+   * Opens system settings for this app on native Capacitor iOS.
    *
-   * Native: add `@capacitor/app-launcher` to the Capacitor project and run `npx cap sync`.
-   * Older guides referred to `App.openUrl` from `@capacitor/app`; current Capacitor
-   * exposes URL opening as `AppLauncher.openUrl`. Install/sync `@capacitor/app` only
-   * if the shell uses other App-plugin APIs. For Apple-supported notification panes,
-   * consider `capacitor-native-settings`.
+   * Prefer `capacitor-native-settings` (NativeSettings) for a supported path to the
+   * app settings screen. If only `@capacitor/app-launcher` is installed, this uses
+   * `AppLauncher.canOpenUrl` when available to verify a URL before opening; it does
+   * not rely on undocumented `app-settings:` without that check.
    *
-   * @returns {Promise<boolean>} true when the plugin reports the URL handoff completed
+   * @returns {Promise<boolean>} true when settings were opened successfully
    */
   openIosAppSettings() {
     if (!isNativeCapacitorShell()) {
@@ -293,17 +358,59 @@ export default Ember.Service.extend(Ember.Evented, {
       return Ember.RSVP.resolve(false);
     }
 
+    const nativeSettings = getNativeSettingsPlugin();
+    if (nativeSettings && typeof nativeSettings.openIOS === "function") {
+      return Ember.RSVP.resolve()
+        .then(() => nativeSettings.openIOS({ option: "app" }))
+        .then(res => !!(res && res.status === true))
+        .catch(e => {
+          logError("cordova service: NativeSettings.openIOS failed", e);
+          return false;
+        });
+    }
+    if (nativeSettings && typeof nativeSettings.open === "function") {
+      return Ember.RSVP.resolve()
+        .then(() =>
+          nativeSettings.open({
+            optionIOS: "app"
+          })
+        )
+        .then(res => !!(res && res.status === true))
+        .catch(e => {
+          logError("cordova service: NativeSettings.open failed", e);
+          return false;
+        });
+    }
+
     const launcher = getAppLauncherPlugin();
     if (!launcher || typeof launcher.openUrl !== "function") {
       logError(
-        "cordova service: AppLauncher plugin missing or invalid. Add @capacitor/app-launcher to the native project and run npx cap sync."
+        "cordova service: openIosAppSettings: add capacitor-native-settings and sync, or install @capacitor/app-launcher with canOpenUrl support. Without NativeSettings, iOS cannot open settings reliably from the web layer."
+      );
+      return Ember.RSVP.resolve(false);
+    }
+
+    const settingsUrl = "app-settings:";
+    if (typeof launcher.canOpenUrl !== "function") {
+      logError(
+        "cordova service: openIosAppSettings: AppLauncher.canOpenUrl is missing; add capacitor-native-settings (recommended) or upgrade @capacitor/app-launcher so URL schemes can be verified before open."
       );
       return Ember.RSVP.resolve(false);
     }
 
     return Ember.RSVP.resolve()
-      .then(() => launcher.openUrl({ url: "app-settings:" }))
-      .then(({ completed }) => completed === true)
+      .then(() => launcher.canOpenUrl({ url: settingsUrl }))
+      .then(can => {
+        if (!can || can.value !== true) {
+          logError(
+            "cordova service: openIosAppSettings: URL not supported by AppLauncher; add capacitor-native-settings and run npx cap sync."
+          );
+          return false;
+        }
+        return launcher
+          .openUrl({ url: settingsUrl })
+          .then(({ completed }) => completed === true);
+      })
       .catch(e => {
         logError("cordova service: openIosAppSettings failed", e);
         return false;
