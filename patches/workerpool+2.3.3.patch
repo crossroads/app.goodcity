@@ -1,0 +1,15 @@
+diff --git a/node_modules/workerpool/lib/WorkerHandler.js b/node_modules/workerpool/lib/WorkerHandler.js
+index 02f748a..1127a53 100644
+--- a/node_modules/workerpool/lib/WorkerHandler.js
++++ b/node_modules/workerpool/lib/WorkerHandler.js
+@@ -171,7 +171,9 @@ function WorkerHandler(script, options) {
+   // send all queued requests to worker
+   function dispatchQueuedRequests()
+   {
+-    me.requestQueue.forEach(me.worker.send.bind(me.worker));
++    me.requestQueue.forEach(function (request) {
++      me.worker.send(request);
++    });
+     me.requestQueue = [];
+   }
+ 

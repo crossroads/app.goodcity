@@ -85,58 +85,64 @@ export default Ember.Service.extend(Ember.Evented, {
     }
   },
 
-  async _ensurePushRegistrationListeners(push) {
+  _ensurePushRegistrationListeners(push) {
     if (this.get("_pushRegistrationListenersAttached")) {
-      return;
+      return Ember.RSVP.resolve();
     }
     if (typeof push.addListener !== "function") {
       logError(
         "cordova service: PushNotifications.addListener is missing (Capacitor Push Notifications plugin)."
       );
-      return;
+      return Ember.RSVP.resolve();
     }
 
     let registrationHandle;
     let registrationErrorHandle;
-    try {
-      registrationHandle = await push.addListener("registration", payload => {
-        Ember.run(this, function() {
-          this._onPushRegistrationSuccess(payload);
+    return Ember.RSVP.resolve()
+      .then(() => {
+        return push.addListener("registration", payload => {
+          Ember.run(this, function() {
+            this._onPushRegistrationSuccess(payload);
+          });
         });
-      });
-      registrationErrorHandle = await push.addListener(
-        "registrationError",
-        err => {
+      })
+      .then(handle => {
+        registrationHandle = handle;
+        return push.addListener("registrationError", err => {
           Ember.run(this, function() {
             this._onPushRegistrationError(err);
           });
-        }
-      );
-    } catch (e) {
-      logError("cordova service: PushNotifications addListener failed", e);
-      return;
-    }
+        });
+      })
+      .then(handle => {
+        registrationErrorHandle = handle;
 
-    const tearDown = async () => {
-      try {
-        if (
-          registrationHandle &&
-          typeof registrationHandle.remove === "function"
-        ) {
-          await registrationHandle.remove();
-        }
-        if (
-          registrationErrorHandle &&
-          typeof registrationErrorHandle.remove === "function"
-        ) {
-          await registrationErrorHandle.remove();
-        }
-      } catch (e) {
-        logWarn("cordova service: push listener teardown failed");
-      }
-    };
-    this.set("_pushRegistrationTearDown", tearDown);
-    this.set("_pushRegistrationListenersAttached", true);
+        const tearDown = () => {
+          const removals = [];
+          try {
+            if (
+              registrationHandle &&
+              typeof registrationHandle.remove === "function"
+            ) {
+              removals.push(registrationHandle.remove());
+            }
+            if (
+              registrationErrorHandle &&
+              typeof registrationErrorHandle.remove === "function"
+            ) {
+              removals.push(registrationErrorHandle.remove());
+            }
+          } catch (e) {
+            logWarn("cordova service: push listener teardown failed");
+          }
+          return Ember.RSVP.all(removals).catch(() => {});
+        };
+        this.set("_pushRegistrationTearDown", tearDown);
+        this.set("_pushRegistrationListenersAttached", true);
+      })
+      .catch(e => {
+        logError("cordova service: PushNotifications addListener failed", e);
+      });
   },
 
   _onPushRegistrationError(err) {
@@ -226,106 +232,118 @@ export default Ember.Service.extend(Ember.Evented, {
   verifyIosNotificationSetting(onEnabled, onDisabled) {
     // Check (and request) notification permission via @capacitor/push-notifications
     // on native shells. In the browser, behave as disabled without noisy logs.
-    (async () => {
-      try {
-        if (!isNativeCapacitorShell()) {
-          if (typeof onDisabled === "function") {
-            onDisabled();
-          }
-          return;
-        }
+    if (!isNativeCapacitorShell()) {
+      if (typeof onDisabled === "function") {
+        onDisabled();
+      }
+      return;
+    }
 
-        const push = getPushNotificationsPlugin();
-        if (!push || typeof push.checkPermissions !== "function") {
-          logError(
-            "cordova service: Capacitor PushNotifications is missing or invalid. Install @capacitor/push-notifications and run cap sync."
-          );
-          if (typeof onDisabled === "function") {
-            onDisabled();
-          }
-          return;
-        }
+    const push = getPushNotificationsPlugin();
+    if (!push || typeof push.checkPermissions !== "function") {
+      logError(
+        "cordova service: Capacitor PushNotifications is missing or invalid. Install @capacitor/push-notifications and run cap sync."
+      );
+      if (typeof onDisabled === "function") {
+        onDisabled();
+      }
+      return;
+    }
 
-        let perms = await push.checkPermissions();
+    Ember.RSVP.resolve()
+      .then(() => push.checkPermissions())
+      .then(perms => {
         if (perms && perms.receive === "prompt") {
-          perms = await push.requestPermissions();
+          return push.requestPermissions();
         }
-
+        return perms;
+      })
+      .then(perms => {
         if (perms && perms.receive === "granted") {
           if (typeof onEnabled === "function") {
             onEnabled();
           }
-        } else {
-          if (typeof onDisabled === "function") {
-            onDisabled();
-          }
+        } else if (typeof onDisabled === "function") {
+          onDisabled();
         }
-      } catch (e) {
+      })
+      .catch(e => {
         logError("cordova service: verifyIosNotificationSetting failed", e);
         if (typeof onDisabled === "function") {
           onDisabled();
         }
-      }
-    })();
+      });
   },
 
   initiatePushNotifications() {
-    (async () => {
-      try {
-        if (!isNativeCapacitorShell()) {
-          logWarn(
-            "cordova service: initiatePushNotifications called outside a native Capacitor shell; skipping."
-          );
-          return;
-        }
+    if (!isNativeCapacitorShell()) {
+      logWarn(
+        "cordova service: initiatePushNotifications called outside a native Capacitor shell; skipping."
+      );
+      return;
+    }
 
-        const push = getPushNotificationsPlugin();
-        if (
-          !push ||
-          typeof push.checkPermissions !== "function" ||
-          typeof push.requestPermissions !== "function" ||
-          typeof push.addListener !== "function" ||
-          typeof push.register !== "function"
-        ) {
-          logError(
-            "cordova service: initiatePushNotifications: PushNotifications plugin missing or invalid (need checkPermissions, requestPermissions, addListener, and register)."
-          );
-          return;
-        }
+    const push = getPushNotificationsPlugin();
+    if (
+      !push ||
+      typeof push.checkPermissions !== "function" ||
+      typeof push.requestPermissions !== "function" ||
+      typeof push.addListener !== "function" ||
+      typeof push.register !== "function"
+    ) {
+      logError(
+        "cordova service: initiatePushNotifications: PushNotifications plugin missing or invalid (need checkPermissions, requestPermissions, addListener, and register)."
+      );
+      return;
+    }
 
-        let perms = await push.checkPermissions();
+    Ember.RSVP.resolve()
+      .then(() => push.checkPermissions())
+      .then(perms => {
         if (perms && perms.receive === "prompt") {
-          perms = await push.requestPermissions();
+          return push.requestPermissions();
         }
-
+        return perms;
+      })
+      .then(perms => {
         if (!perms || perms.receive !== "granted") {
           logWarn(
             "cordova service: initiatePushNotifications: permission not granted (receive=" +
               (perms && perms.receive ? perms.receive : "unknown") +
               "); skipping push.register."
           );
+          return null;
+        }
+        return this._ensurePushRegistrationListeners(push).then(() => perms);
+      })
+      .then(perms => {
+        if (!perms) {
           return;
         }
-
-        await this._ensurePushRegistrationListeners(push);
         if (!this.get("_pushRegistrationListenersAttached")) {
           logError(
             "cordova service: initiatePushNotifications: push listeners not attached; skipping register."
           );
           return;
         }
-
-        try {
-          await push.register();
-        } catch (regErr) {
+        return Ember.RSVP.resolve(push.register()).catch(regErr => {
           logError(
             "cordova service: initiatePushNotifications: push.register failed",
             regErr
           );
-        }
-      } catch (e) {
+        });
+      })
+      .catch(e => {
         logError("cordova service: initiatePushNotifications failed", e);
-      }
-    })();
+      });
+  },
+
+  /**
+   * Backwards-compatible hook used by older startup code.
+   * Historically this lived on the Cordova service; in modern builds it’s a
+   * safe alias for any “on app start” native setup we still support.
+   */
+  appLoad() {
+    this.initiatePushNotifications();
   }
 });

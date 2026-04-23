@@ -4,7 +4,7 @@ aliases:
 
   - defaults: &defaults
       docker:
-        - image: cimg/node:12.22-browsers
+        - image: cimg/node:22.14.0-browsers
       working_directory: ~/code
   - &restore-repo-cache
       key: app-goodcity-repo-{{ .Environment.CIRCLE_SHA1 }}

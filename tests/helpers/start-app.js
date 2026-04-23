@@ -47,8 +47,15 @@ export default function startApp(attrs, permissionId) {
   Ember.$("head").append(
     "<style>.loading-indicator, .reveal-modal-bg, .reveal-modal {display:none !important;}</style>"
   );
-  application.__container__.lookup("service:logger").error = message =>
-    QUnit.assert.equal(message, "");
+  application.__container__.lookup("service:logger").error = message => {
+    const actual =
+      message &&
+      typeof message === "object" &&
+      typeof message.message === "string"
+        ? message.message
+        : message;
+    return QUnit.assert.equal(actual, "");
+  };
 
   //needed by application controller init
   application.__container__.lookup(
