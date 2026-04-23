@@ -106,36 +106,32 @@ platform :android do
     aab_path = aab_pattern.empty? ? nil : Dir[aab_pattern].compact.first
     apk_path = apk_pattern.empty? ? nil : Dir[apk_pattern].compact.first
 
-    artifact_path =
-      if aab_path && File.exist?(aab_path)
-        aab_path
-      elsif apk_path && File.exist?(apk_path)
-        apk_path
-      else
-        details = []
-        details << "AAB_FILE_PATH=#{aab_pattern.inspect}" unless aab_pattern.empty?
-        details << "APK_FILE_PATH=#{apk_pattern.inspect}" unless apk_pattern.empty?
+    artifact_path = aab_path || apk_path
+    if artifact_path.nil?
+      details = []
+      details << "AAB_FILE_PATH=#{aab_pattern.inspect}" unless aab_pattern.empty?
+      details << "APK_FILE_PATH=#{apk_pattern.inspect}" unless apk_pattern.empty?
 
-        UI.user_error!(
-          "Could not resolve an Android artifact from AAB/APK globs. " \
-          "Set non-empty AAB_FILE_PATH and/or APK_FILE_PATH. " \
-          "Details: #{details.join(" | ")}"
-        )
-      end
+      UI.user_error!(
+        "Could not resolve an Android artifact from AAB/APK globs. " \
+        "Set non-empty AAB_FILE_PATH and/or APK_FILE_PATH. " \
+        "Details: #{details.join(" | ")}"
+      )
+    end
 
-    if artifact_path && artifact_path.end_with?(".aab")
+    if artifact_path.end_with?(".aab")
       ENV["SUPPLY_AAB"] = artifact_path
     end
 
-    if artifact_path && artifact_path.end_with?(".apk")
+    if artifact_path.end_with?(".apk")
       ENV["SUPPLY_APK"] = artifact_path
     end
 
     # TestFairy expects an APK path (env name is historical); never pass an .aab.
     testfairy_apk =
-      if apk_path && File.exist?(apk_path)
+      if apk_path
         apk_path
-      elsif artifact_path && artifact_path.end_with?(".apk")
+      elsif artifact_path.end_with?(".apk")
         artifact_path
       end
     if testfairy_apk
