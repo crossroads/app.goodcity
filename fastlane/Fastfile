@@ -1,7 +1,7 @@
 require 'json'
 require_relative "./release_utils"
 
-update_fastlane
+# Version from Gemfile.lock; update_fastlane breaks bundle exec after self-update.
 
 default_platform :android
 
