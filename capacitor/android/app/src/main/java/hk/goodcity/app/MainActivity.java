@@ -15,6 +15,8 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+  private boolean systemBarChromeApplied;
+
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
@@ -34,8 +36,12 @@ public class MainActivity extends BridgeActivity {
     if (!hasFocus) {
       return;
     }
+    if (systemBarChromeApplied) {
+      return;
+    }
 
     applySystemBarChrome(true);
+    systemBarChromeApplied = true;
   }
 
   /** @param attachInsetsListener when true, register padding for system bar insets on android.R.id.content */
