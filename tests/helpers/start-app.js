@@ -49,11 +49,11 @@ export default function startApp(attrs, permissionId) {
   );
   application.__container__.lookup("service:logger").error = message => {
     const actual =
-      message &&
-      typeof message === "object" &&
-      typeof message.message === "string"
-        ? message.message
-        : message;
+      (message &&
+        typeof message === "object" &&
+        typeof message.message === "string" &&
+        message.message) ||
+      message;
     return QUnit.assert.equal(actual, "");
   };
 

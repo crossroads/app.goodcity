@@ -158,10 +158,7 @@ export default Ember.Service.extend(Ember.Evented, {
       return;
     }
 
-    const cap =
-      typeof window !== "undefined" && window.Capacitor
-        ? window.Capacitor
-        : null;
+    const cap = (typeof window !== "undefined" && window.Capacitor) || null;
     const capPlatform =
       cap && typeof cap.getPlatform === "function" ? cap.getPlatform() : "";
 
