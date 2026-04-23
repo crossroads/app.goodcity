@@ -423,9 +423,11 @@ export default Ember.Service.extend(Ember.Evented, {
   },
 
   /**
-   * Backwards-compatible hook used by older startup code.
-   * Historically this lived on the Cordova service; in modern builds it’s a
-   * safe alias for any “on app start” native setup we still support.
+   * Native shell startup hook (instance initializer `native-shell` on Capacitor).
+   * Runs `initiatePushNotifications()` so `PushNotifications.checkPermissions` /
+   * `requestPermissions` run early (needed for Android 13+ POST_NOTIFICATIONS
+   * together with the manifest declaration). Listener registration still follows
+   * permission grant inside `initiatePushNotifications`.
    */
   appLoad() {
     this.initiatePushNotifications();
