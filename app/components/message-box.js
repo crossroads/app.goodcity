@@ -1,8 +1,7 @@
-import Ember from 'ember';
-import messageBox from '../templates/components/message-box';
+import Ember from "ember";
+import messageBox from "../templates/components/message-box";
 
 export default Ember.Component.extend({
-
   layout: messageBox,
   message: "",
   btn1Text: "",
@@ -24,10 +23,18 @@ export default Ember.Component.extend({
   actions: {
     btn1Click() {
       var callbackOutput = true;
-      if (this.btn1Callback) {
-        callbackOutput = this.btn1Callback();
+      try {
+        if (this.btn1Callback) {
+          callbackOutput = this.btn1Callback();
+        }
+      } catch (e) {
+        callbackOutput = false;
       }
-      if(callbackOutput !== false) { this.close(); }
+      Ember.RSVP.resolve(callbackOutput).then(result => {
+        if (result !== false) {
+          this.close();
+        }
+      });
     },
 
     btn2Click() {

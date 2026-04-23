@@ -37,6 +37,13 @@ function getPushNotificationsPlugin() {
   return plugins ? plugins.PushNotifications : null;
 }
 
+function getAppLauncherPlugin() {
+  const cap =
+    typeof window !== "undefined" && window.Capacitor ? window.Capacitor : null;
+  const plugins = cap && cap.Plugins ? cap.Plugins : null;
+  return plugins ? plugins.AppLauncher : null;
+}
+
 /** Values expected by POST /api/v1/auth/register_device (Azure NH platform names). */
 function pushPlatformForRegisterDeviceApi(capPlatform) {
   if (capPlatform === "android") {
@@ -224,6 +231,52 @@ export default Ember.Service.extend(Ember.Evented, {
       typeof navigator !== "undefined" &&
       /iPad|iPhone|iPod/.test(navigator.userAgent)
     );
+  },
+
+  /**
+   * Opens system settings for this app on native Capacitor (iOS uses the
+   * `app-settings:` URL via the App Launcher bridge).
+   *
+   * Native: add `@capacitor/app-launcher` to the Capacitor project and run `npx cap sync`.
+   * Older guides referred to `App.openUrl` from `@capacitor/app`; current Capacitor
+   * exposes URL opening as `AppLauncher.openUrl`. Install/sync `@capacitor/app` only
+   * if the shell uses other App-plugin APIs. For Apple-supported notification panes,
+   * consider `capacitor-native-settings`.
+   *
+   * @returns {Promise<boolean>} true when the plugin reports the URL handoff completed
+   */
+  openIosAppSettings() {
+    if (!isNativeCapacitorShell()) {
+      return Ember.RSVP.resolve(false);
+    }
+
+    const cap =
+      typeof window !== "undefined" && window.Capacitor
+        ? window.Capacitor
+        : null;
+    if (
+      !cap ||
+      typeof cap.getPlatform !== "function" ||
+      cap.getPlatform() !== "ios"
+    ) {
+      return Ember.RSVP.resolve(false);
+    }
+
+    const launcher = getAppLauncherPlugin();
+    if (!launcher || typeof launcher.openUrl !== "function") {
+      logError(
+        "cordova service: AppLauncher plugin missing or invalid. Add @capacitor/app-launcher to the native project and run npx cap sync."
+      );
+      return Ember.RSVP.resolve(false);
+    }
+
+    return Ember.RSVP.resolve()
+      .then(() => launcher.openUrl({ url: "app-settings:" }))
+      .then(({ completed }) => completed === true)
+      .catch(e => {
+        logError("cordova service: openIosAppSettings failed", e);
+        return false;
+      });
   },
 
   verifyIosNotificationSetting(onEnabled, onDisabled) {
