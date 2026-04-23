@@ -1,4 +1,5 @@
 import Ember from "ember";
+import AjaxPromise from "../utils/ajax-promise";
 
 function logError(message, error) {
   if (Ember.Logger && typeof Ember.Logger.error === "function") {
@@ -33,7 +34,152 @@ function getPushNotificationsPlugin() {
   return plugins ? plugins.PushNotifications : null;
 }
 
-export default Ember.Service.extend({
+/** Values expected by POST /api/v1/auth/register_device (Azure NH platform names). */
+function pushPlatformForRegisterDeviceApi(capPlatform) {
+  if (capPlatform === "android") {
+    return "fcm";
+  }
+  if (capPlatform === "ios") {
+    return "apns";
+  }
+  return "fcm";
+}
+
+function extractPushRegistrationToken(payload) {
+  if (!payload) {
+    return null;
+  }
+  if (typeof payload.value === "string") {
+    return payload.value;
+  }
+  if (typeof payload === "string") {
+    return payload;
+  }
+  return null;
+}
+
+export default Ember.Service.extend(Ember.Evented, {
+  session: Ember.inject.service(),
+
+  init() {
+    this._super(...arguments);
+    this.set("lastRegisteredPushToken", null);
+    this.set("lastRegisteredPushPlatform", null);
+    this.set("_pushRegistrationListenersAttached", false);
+    this.set("_pushRegistrationTearDown", null);
+  },
+
+  willDestroy() {
+    this._super(...arguments);
+    const tearDown = this.get("_pushRegistrationTearDown");
+    if (typeof tearDown === "function") {
+      Ember.RSVP.resolve(tearDown())
+        .catch(() => {})
+        .finally(() => {
+          this.set("_pushRegistrationTearDown", null);
+          this.set("_pushRegistrationListenersAttached", false);
+        });
+    }
+  },
+
+  async _ensurePushRegistrationListeners(push) {
+    if (this.get("_pushRegistrationListenersAttached")) {
+      return;
+    }
+    if (typeof push.addListener !== "function") {
+      logError(
+        "cordova service: PushNotifications.addListener is missing (Capacitor Push Notifications plugin)."
+      );
+      return;
+    }
+
+    let registrationHandle;
+    let registrationErrorHandle;
+    try {
+      registrationHandle = await push.addListener("registration", payload => {
+        Ember.run(this, function() {
+          this._onPushRegistrationSuccess(payload);
+        });
+      });
+      registrationErrorHandle = await push.addListener(
+        "registrationError",
+        err => {
+          Ember.run(this, function() {
+            this._onPushRegistrationError(err);
+          });
+        }
+      );
+    } catch (e) {
+      logError("cordova service: PushNotifications addListener failed", e);
+      return;
+    }
+
+    const tearDown = async () => {
+      try {
+        if (
+          registrationHandle &&
+          typeof registrationHandle.remove === "function"
+        ) {
+          await registrationHandle.remove();
+        }
+        if (
+          registrationErrorHandle &&
+          typeof registrationErrorHandle.remove === "function"
+        ) {
+          await registrationErrorHandle.remove();
+        }
+      } catch (e) {
+        logWarn("cordova service: push listener teardown failed");
+      }
+    };
+    this.set("_pushRegistrationTearDown", tearDown);
+    this.set("_pushRegistrationListenersAttached", true);
+  },
+
+  _onPushRegistrationError(err) {
+    logError("cordova service: PushNotifications registrationError", err);
+  },
+
+  _onPushRegistrationSuccess(payload) {
+    const token = extractPushRegistrationToken(payload);
+    if (!token) {
+      logWarn(
+        "cordova service: registration event without usable token (payload missing value)"
+      );
+      return;
+    }
+
+    const cap =
+      typeof window !== "undefined" && window.Capacitor
+        ? window.Capacitor
+        : null;
+    const capPlatform =
+      cap && typeof cap.getPlatform === "function" ? cap.getPlatform() : "";
+
+    this.set("lastRegisteredPushToken", token);
+    this.set("lastRegisteredPushPlatform", capPlatform);
+    this.trigger("pushDeviceTokenRegistered", { token, platform: capPlatform });
+    this._registerPushTokenWithApi(token, capPlatform);
+  },
+
+  _registerPushTokenWithApi(registrationId, capPlatform) {
+    const authToken = this.get("session.authToken");
+    if (!authToken) {
+      logWarn(
+        "cordova service: push token received but user is not authenticated; skipping POST /auth/register_device."
+      );
+      return;
+    }
+
+    const platform = pushPlatformForRegisterDeviceApi(capPlatform);
+    new AjaxPromise("/auth/register_device", "POST", authToken, {
+      registration_id: registrationId,
+      platform: platform
+    }).catch(xhr => {
+      logError("cordova service: POST /auth/register_device failed", xhr);
+    });
+  },
+
   isIOS() {
     try {
       // Prefer Capacitor platform detection when available
@@ -121,21 +267,35 @@ export default Ember.Service.extend({
         const push = getPushNotificationsPlugin();
         if (
           !push ||
+          typeof push.checkPermissions !== "function" ||
           typeof push.requestPermissions !== "function" ||
+          typeof push.addListener !== "function" ||
           typeof push.register !== "function"
         ) {
           logError(
-            "cordova service: initiatePushNotifications: PushNotifications plugin missing or invalid (need requestPermissions and register)."
+            "cordova service: initiatePushNotifications: PushNotifications plugin missing or invalid (need checkPermissions, requestPermissions, addListener, and register)."
           );
           return;
         }
 
-        const perms = await push.requestPermissions();
+        let perms = await push.checkPermissions();
+        if (perms && perms.receive === "prompt") {
+          perms = await push.requestPermissions();
+        }
+
         if (!perms || perms.receive !== "granted") {
           logWarn(
             "cordova service: initiatePushNotifications: permission not granted (receive=" +
               (perms && perms.receive ? perms.receive : "unknown") +
               "); skipping push.register."
+          );
+          return;
+        }
+
+        await this._ensurePushRegistrationListeners(push);
+        if (!this.get("_pushRegistrationListenersAttached")) {
+          logError(
+            "cordova service: initiatePushNotifications: push listeners not attached; skipping register."
           );
           return;
         }
