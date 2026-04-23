@@ -78,7 +78,7 @@
     "xml2js": "^0.4.19"
   },
   "engines": {
-    "node": ">= 18"
+    "node": ">= 22"
   },
   "dependencies": {
     "bower": "^1.8.4",
