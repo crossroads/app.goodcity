@@ -115,6 +115,21 @@ export default Ember.Service.extend(Ember.Evented, {
       })
       .then(handle => {
         registrationHandle = handle;
+        const tearDown = () => {
+          const removals = [];
+          try {
+            if (
+              registrationHandle &&
+              typeof registrationHandle.remove === "function"
+            ) {
+              removals.push(registrationHandle.remove());
+            }
+          } catch (e) {
+            logWarn("cordova service: push listener teardown failed");
+          }
+          return Ember.RSVP.all(removals).catch(() => {});
+        };
+        this.set("_pushRegistrationTearDown", tearDown);
         return push.addListener("registrationError", err => {
           Ember.run(this, function() {
             this._onPushRegistrationError(err);
@@ -149,6 +164,25 @@ export default Ember.Service.extend(Ember.Evented, {
       })
       .catch(e => {
         logError("cordova service: PushNotifications addListener failed", e);
+        const tearDown = this.get("_pushRegistrationTearDown");
+        if (typeof tearDown === "function") {
+          Ember.RSVP.resolve(tearDown())
+            .catch(() => {})
+            .finally(() => {
+              Ember.run(this, function() {
+                this.set("_pushRegistrationTearDown", null);
+                this.set("_pushRegistrationListenersAttached", false);
+              });
+              registrationHandle = undefined;
+              registrationErrorHandle = undefined;
+            });
+        } else {
+          Ember.run(this, function() {
+            this.set("_pushRegistrationListenersAttached", false);
+          });
+          registrationHandle = undefined;
+          registrationErrorHandle = undefined;
+        }
       });
   },
 
