@@ -5,7 +5,7 @@
   "description": "Capacitor native wrapper for the Ember GoodCity app (web assets built in ../dist).",
   "scripts": {
     "rename:package": "node rename_package.js",
-    "cap:sync": "cap sync",
+    "cap:sync": "node scripts/sync-ios-marketing-version.js && cap sync",
     "cap:open:ios": "cap open ios",
     "cap:open:android": "cap open android",
     "cap:run:android": "node scripts/run-android-default-emulator.js"
