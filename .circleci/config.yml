@@ -323,24 +323,24 @@ workflows:
             - tests
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|ionic-capacitor)$/
       - www_deploy:
           requires:
             - www_build
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|ionic-capacitor)$/
       - android_build_and_deploy:
           requires:
             - tests
             - www_build
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|ionic-capacitor)$/
       - ios_build_and_deploy:
           requires:
             - tests
             - www_build
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|ionic-capacitor)$/
