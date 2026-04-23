@@ -6,8 +6,12 @@ function uniqueStrings(values) {
   const out = [];
   const seen = {};
   (values || []).forEach(v => {
-    if (!v) return;
-    if (seen[v]) return;
+    if (!v) {
+      return;
+    }
+    if (seen[v]) {
+      return;
+    }
     seen[v] = true;
     out.push(v);
   });
@@ -16,7 +20,9 @@ function uniqueStrings(values) {
 
 // Adds http(s) origins plus ws/wss equivalents for websocket-capable hosts.
 function cspConnectOriginsFromAppUrl(urlString) {
-  if (!urlString) return [];
+  if (!urlString) {
+    return [];
+  }
 
   let parsed;
   try {
@@ -190,8 +196,9 @@ module.exports = function(environment) {
   }
 
   if (environment === "production") {
-    if (!process.env.ENVIRONMENT)
+    if (!process.env.ENVIRONMENT) {
       throw "Please pass an appropriate ENVIRONMENT=(staging|production) param.";
+    }
     // RESTAdapter Settings
     ENV.APP.API_HOST_URL = "https://api.goodcity.hk";
     ENV.APP.SOCKETIO_WEBSERVICE_URL = "https://socket.goodcity.hk:81/goodcity";

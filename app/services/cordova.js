@@ -284,10 +284,7 @@ export default Ember.Service.extend(Ember.Evented, {
       return Ember.RSVP.resolve(false);
     }
 
-    const cap =
-      typeof window !== "undefined" && window.Capacitor
-        ? window.Capacitor
-        : null;
+    const cap = (typeof window !== "undefined" && window.Capacitor) || null;
     if (
       !cap ||
       typeof cap.getPlatform !== "function" ||
