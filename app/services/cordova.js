@@ -1,3 +1,6 @@
+/* jshint esversion: 8, esnext: false */
+/* global globalThis, global, process */
+
 import Ember from "ember";
 import AjaxPromise from "../utils/ajax-promise";
 
@@ -194,14 +197,16 @@ export default Ember.Service.extend(Ember.Evented, {
     // legacy escape hatch is enabled.
     const legacyCordova =
       typeof window !== "undefined" && typeof window.cordova !== "undefined";
-    const root =
-      typeof globalThis !== "undefined"
-        ? globalThis
-        : typeof window !== "undefined"
-        ? window
-        : typeof global !== "undefined"
-        ? global
-        : undefined;
+    let root;
+    if (typeof globalThis !== "undefined") {
+      root = globalThis;
+    } else if (typeof window !== "undefined") {
+      root = window;
+    } else if (typeof global !== "undefined") {
+      root = global;
+    } else {
+      root = undefined;
+    }
     const legacyFlag =
       (root && root.__ENABLE_CORDOVA_LEGACY__) ||
       (typeof process !== "undefined" &&
@@ -224,7 +229,9 @@ export default Ember.Service.extend(Ember.Evented, {
     (async () => {
       try {
         if (!isNativeCapacitorShell()) {
-          if (typeof onDisabled === "function") onDisabled();
+          if (typeof onDisabled === "function") {
+            onDisabled();
+          }
           return;
         }
 
@@ -233,7 +240,9 @@ export default Ember.Service.extend(Ember.Evented, {
           logError(
             "cordova service: Capacitor PushNotifications is missing or invalid. Install @capacitor/push-notifications and run cap sync."
           );
-          if (typeof onDisabled === "function") onDisabled();
+          if (typeof onDisabled === "function") {
+            onDisabled();
+          }
           return;
         }
 
@@ -243,13 +252,19 @@ export default Ember.Service.extend(Ember.Evented, {
         }
 
         if (perms && perms.receive === "granted") {
-          if (typeof onEnabled === "function") onEnabled();
+          if (typeof onEnabled === "function") {
+            onEnabled();
+          }
         } else {
-          if (typeof onDisabled === "function") onDisabled();
+          if (typeof onDisabled === "function") {
+            onDisabled();
+          }
         }
       } catch (e) {
         logError("cordova service: verifyIosNotificationSetting failed", e);
-        if (typeof onDisabled === "function") onDisabled();
+        if (typeof onDisabled === "function") {
+          onDisabled();
+        }
       }
     })();
   },
