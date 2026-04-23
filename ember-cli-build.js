@@ -5,6 +5,12 @@ var webRelease =
 
 module.exports = function(defaults) {
   var app = new EmberApp(defaults, {
+    sassOptions: {
+      quietDeps: true,
+      // This app (and `shared-goodcity`) still use legacy Sass `@import`.
+      // Hide that specific deprecation so we can incrementally migrate later.
+      silenceDeprecations: ["import"]
+    },
     sourcemaps: {
       enabled: true,
       extensions: ["js"]
