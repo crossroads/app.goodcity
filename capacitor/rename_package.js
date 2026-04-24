@@ -97,13 +97,8 @@ androidGradle = replaceRequired(
   `applicationId "${appId}"`
 );
 
-androidGradle = replaceRequired(
-  androidGradle,
-  androidGradlePath,
-  "Android namespace",
-  /namespace\s+"[^"]*"/,
-  `namespace "${appId}"`
-);
+// Keep namespace as hk.goodcity.app (do not mirror applicationId). R and BuildConfig are
+// generated under the namespace; Java under hk.goodcity.app must resolve the same R.
 
 androidGradle = replaceRequired(
   androidGradle,
