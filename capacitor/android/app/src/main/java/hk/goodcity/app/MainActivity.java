@@ -15,7 +15,7 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
-  private boolean systemBarChromeApplied;
+  private boolean systemBarInsetsListenerAttached;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -24,7 +24,7 @@ public class MainActivity extends BridgeActivity {
     // Edge-to-edge + decor background so @color/goodcity_blue shows behind transparent
     // system bars on Android 15+ (API 35), where setStatusBarColor/setNavigationBarColor
     // are no longer applied for the default edge-to-edge window.
-    applySystemBarChrome(false);
+    applyWindowSystemBarDecorOnce();
   }
 
   @Override
@@ -32,20 +32,17 @@ public class MainActivity extends BridgeActivity {
     super.onWindowFocusChanged(hasFocus);
 
     // BridgeActivity uses Capacitor's internal layout (not our activity_main.xml),
-    // so apply insets to the real content root once the view hierarchy exists.
-    if (!hasFocus) {
-      return;
-    }
-    if (systemBarChromeApplied) {
+    // so attach insets to the real content root once the view hierarchy exists.
+    if (!hasFocus || systemBarInsetsListenerAttached) {
       return;
     }
 
-    applySystemBarChrome(true);
-    systemBarChromeApplied = true;
+    attachSystemBarInsetsListener();
+    systemBarInsetsListenerAttached = true;
   }
 
-  /** @param attachInsetsListener when true, register padding for system bar insets on android.R.id.content */
-  private void applySystemBarChrome(boolean attachInsetsListener) {
+  /** One-time window decor: edge-to-edge, background, bar colors (API 34-), light/dark appearance. */
+  private void applyWindowSystemBarDecorOnce() {
     Window window = getWindow();
     int goodcityBlue = ContextCompat.getColor(this, R.color.goodcity_blue);
 
@@ -64,11 +61,10 @@ public class MainActivity extends BridgeActivity {
       controller.setAppearanceLightStatusBars(false);
       controller.setAppearanceLightNavigationBars(false);
     }
+  }
 
-    if (!attachInsetsListener) {
-      return;
-    }
-
+  /** Padding for system bar insets on android.R.id.content (after decor is ready). */
+  private void attachSystemBarInsetsListener() {
     View content = findViewById(android.R.id.content);
     if (content == null) {
       return;
