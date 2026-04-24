@@ -162,9 +162,8 @@ jobs:
       - image: cimg/android:2025.10-browsers
     environment:
       JVM_OPTS: -Xmx3200m
-      # cimg/android defaults JAVA_HOME to JDK 21, but AGP 8.7.x requires JDK 17+.
-      # Pin JDK 17 for Gradle/Android builds while keeping the image's default for other tooling.
-      JAVA_HOME: /usr/lib/jvm/java-17-openjdk-amd64
+      # cimg/android:2025.10 sets JAVA_HOME to JDK 21. Capacitor 8 native modules compile with Java 21;
+      # do not override to JDK 17 or :capacitor-android fails with "invalid source release: 21".
       CIRCLE_ARTIFACTS: /home/circleci/code/capacitor/android/app/build/outputs
     steps:
       - ruby/install:

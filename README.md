@@ -129,7 +129,7 @@ If you want to run the app on a debug mobile device, you can use Android Studio 
 - Open Android Studio with the project folder located at `<project root>/capacitor/android`
 - Connect your mobile phone and turn on debug mode
 - Run the usual gradle refresh and build processes
-- Use **JDK 17+** for Gradle with Android Gradle Plugin **8.13.x** (pinned `8.13.0` in `capacitor/android/build.gradle`; Android Studio: set the Gradle JDK to 17 in Settings)
+- Use **JDK 21** for Gradle with Android Gradle Plugin **8.13.x** and Capacitor **8.x** (Android Studio: Settings → Build, Execution, Deployment → Build Tools → Gradle → Gradle JDK → **21**)
 - Once the app is launched on the phone, you will have useful logs (great for Push Notification debugging) inside Android Studio and you can also open Browser Inspector to view the usual processes: `edge://inspect/#devices`
 
 ## Using WSL2 in Windows
