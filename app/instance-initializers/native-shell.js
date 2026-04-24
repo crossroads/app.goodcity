@@ -12,8 +12,6 @@ export default {
         document.documentElement.classList.add("is-native-shell");
       }
 
-      // Capacitor only: prompt for notification permission at startup (Android 13+
-      // POST_NOTIFICATIONS, iOS equivalents) via cordova service → PushNotifications.
       if (
         typeof window !== "undefined" &&
         typeof window.Capacitor !== "undefined"

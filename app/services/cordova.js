@@ -8,7 +8,7 @@ function logError(message, error) {
   if (Ember.Logger && typeof Ember.Logger.error === "function") {
     Ember.Logger.error(message, error);
   } else {
-    console.error(message, error);
+    console.error(message, JSON.stringify(error));
   }
 }
 
@@ -205,21 +205,21 @@ export default Ember.Service.extend(Ember.Evented, {
   },
 
   _onSessionAuthTokenChanged() {
-    Ember.run.once(this, "_replayPushTokenRegistrationAfterAuth");
+    Ember.run.once(this, "_ensurePushRegistrationAfterAuth");
   },
 
-  _replayPushTokenRegistrationAfterAuth() {
+  _ensurePushRegistrationAfterAuth() {
     const authToken = this.get("session.authToken");
     if (!authToken) {
-      this.set("lastRegisteredPushPosted", false);
       return;
     }
-    const token = this.get("lastRegisteredPushToken");
-    const platform = this.get("lastRegisteredPushPlatform");
-    if (!token) {
-      return;
+    // Best-effort only. If we're not in a native Capacitor shell, or permissions
+    // are not granted, initiatePushNotifications will no-op.
+    try {
+      this.initiatePushNotifications();
+    } catch (e) {
+      // Never block login flow on native push setup.
     }
-    this._registerPushTokenWithApi(token, platform);
   },
 
   _onPushRegistrationSuccess(payload) {
@@ -257,9 +257,16 @@ export default Ember.Service.extend(Ember.Evented, {
   },
 
   _registerPushTokenWithApi(registrationId, capPlatform) {
+    const id = registrationId == null ? "" : String(registrationId).trim();
+    if (!id) {
+      logWarn(
+        "cordova service: skipping POST /auth/register_device: empty registration_id (Azure NH rejects FcmV1RegistrationId eq '')."
+      );
+      return;
+    }
+
     if (
-      registrationId &&
-      registrationId === this.get("lastRegisteredPushToken") &&
+      id === this.get("lastRegisteredPushToken") &&
       capPlatform === this.get("lastRegisteredPushPlatform") &&
       this.get("lastRegisteredPushPosted")
     ) {
@@ -276,7 +283,7 @@ export default Ember.Service.extend(Ember.Evented, {
 
     const platform = pushPlatformForRegisterDeviceApi(capPlatform);
     new AjaxPromise("/auth/register_device", "POST", authToken, {
-      registration_id: registrationId,
+      registration_id: id,
       platform: platform
     })
       .then(() => {
@@ -442,7 +449,9 @@ export default Ember.Service.extend(Ember.Evented, {
       .then(() => push.checkPermissions())
       .then(perms => {
         if (perms && perms.receive === "prompt") {
-          return push.requestPermissions();
+          return Ember.RSVP.resolve(push.requestPermissions()).then(() =>
+            push.checkPermissions()
+          );
         }
         return perms;
       })
@@ -489,7 +498,9 @@ export default Ember.Service.extend(Ember.Evented, {
       .then(() => push.checkPermissions())
       .then(perms => {
         if (perms && perms.receive === "prompt") {
-          return push.requestPermissions();
+          return Ember.RSVP.resolve(push.requestPermissions()).then(() =>
+            push.checkPermissions()
+          );
         }
         return perms;
       })
@@ -526,14 +537,8 @@ export default Ember.Service.extend(Ember.Evented, {
       });
   },
 
-  /**
-   * Native shell startup hook (instance initializer `native-shell` on Capacitor).
-   * Runs `initiatePushNotifications()` so `PushNotifications.checkPermissions` /
-   * `requestPermissions` run early (needed for Android 13+ POST_NOTIFICATIONS
-   * together with the manifest declaration). Listener registration still follows
-   * permission grant inside `initiatePushNotifications`.
-   */
   appLoad() {
-    this.initiatePushNotifications();
+    // Push registration is intentionally not run on app start. We only attempt it
+    // after login (see session.authToken observer) or explicit user action.
   }
 });
