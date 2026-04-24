@@ -268,11 +268,8 @@ jobs:
             ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM yarn run rename:package
             npx cap sync ios
             mkdir -p "$CIRCLE_ARTIFACTS"
-            # Let xcodebuild talk to App Store Connect so automatic signing can resolve/fetch profiles
-            # for the renamed bundle id (e.g. hk.goodcity.appstaging). Same .p8 as fastlane.
-            export APP_STORE_CONNECT_API_KEY_ID="${APPSTORE_CONNECT_API_KEY_ID}"
-            export APP_STORE_CONNECT_API_ISSUER_ID="${APPSTORE_CONNECT_API_KEY_ISSUER_ID}"
-            export APP_STORE_CONNECT_API_KEY_PATH="${HOME}/code/fastlane/AuthKey_${APPSTORE_CONNECT_API_KEY_ID}.p8"
+            # ASC API auth for headless CI: env vars alone still yield "No Accounts"; xcodebuild needs these flags.
+            AUTHKEY_P8="${HOME}/code/fastlane/AuthKey_${APPSTORE_CONNECT_API_KEY_ID}.p8"
             xcodebuild \
               -workspace ios/App/App.xcworkspace \
               -scheme App \
@@ -280,6 +277,9 @@ jobs:
               -archivePath ios/build/App.xcarchive \
               -destination "generic/platform=iOS" \
               -allowProvisioningUpdates \
+              -authenticationKeyPath "${AUTHKEY_P8}" \
+              -authenticationKeyID "${APPSTORE_CONNECT_API_KEY_ID}" \
+              -authenticationKeyIssuerID "${APPSTORE_CONNECT_API_KEY_ISSUER_ID}" \
               archive \
               DEVELOPMENT_TEAM="6B8FS8W94M" \
               CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY}" \
@@ -303,7 +303,10 @@ jobs:
               -archivePath ios/build/App.xcarchive \
               -exportOptionsPlist ios/build/ExportOptions.plist \
               -exportPath "$CIRCLE_ARTIFACTS" \
-              -allowProvisioningUpdates
+              -allowProvisioningUpdates \
+              -authenticationKeyPath "${AUTHKEY_P8}" \
+              -authenticationKeyID "${APPSTORE_CONNECT_API_KEY_ID}" \
+              -authenticationKeyIssuerID "${APPSTORE_CONNECT_API_KEY_ISSUER_ID}"
       - store_artifacts:
           path: capacitor/ios/build/export
       - run:
