@@ -40,10 +40,18 @@ export default Ember.Component.extend({
     },
 
     btn2Click() {
-      if (this.btn2Callback) {
-        this.btn2Callback();
-      }
-      this.close();
+      Ember.RSVP.resolve()
+        .then(() => (this.btn2Callback ? this.btn2Callback() : undefined))
+        .catch(e => {
+          if (Ember.Logger && Ember.Logger.warn) {
+            Ember.Logger.warn("message-box btn2Callback", e);
+          }
+        })
+        .then(() => {
+          if (!this.isDestroyed && !this.isDestroying) {
+            this.close();
+          }
+        });
     },
 
     closeModal() {
