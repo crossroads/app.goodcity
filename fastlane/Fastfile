@@ -149,7 +149,9 @@ platform :android do
 
   desc "Upload to GooglePlay beta track"
   lane :production do
-    raise "Please specify ENV VAR [AAB_FILE_PATH] or [APK_FILE_PATH]" if (ENV["SUPPLY_AAB"] || ENV["SUPPLY_APK"] || "").empty?
+    aab_ok = !(ENV["SUPPLY_AAB"].to_s.strip.empty?)
+    apk_ok = !(ENV["SUPPLY_APK"].to_s.strip.empty?)
+    raise "Please specify ENV VAR [AAB_FILE_PATH] or [APK_FILE_PATH]" unless aab_ok || apk_ok
 
     json_key_candidates = [
       File.join(Dir.pwd, "fastlane", "google-play-key.json"),
