@@ -27,15 +27,26 @@ if (!version || typeof version !== "string") {
 }
 
 let pbx = fs.readFileSync(pbxPath, "utf8");
-const next = pbx.replace(
-  /MARKETING_VERSION = [^;]+;/g,
-  `MARKETING_VERSION = ${version};`
-);
+const marketingRe = /MARKETING_VERSION = [^;]+;/g;
+const matches = pbx.match(marketingRe);
+if (!matches || matches.length === 0) {
+  console.error(
+    "sync-ios-marketing-version: no MARKETING_VERSION = …; assignments found in",
+    pbxPath
+  );
+  process.exit(1);
+}
+
+const next = pbx.replace(marketingRe, `MARKETING_VERSION = ${version};`);
 if (next !== pbx) {
   fs.writeFileSync(pbxPath, next);
   console.log(
     "sync-ios-marketing-version: set MARKETING_VERSION to",
     version,
     "in project.pbxproj"
+  );
+} else {
+  console.log(
+    `sync-ios-marketing-version: already in sync (MARKETING_VERSION is ${version})`
   );
 }
