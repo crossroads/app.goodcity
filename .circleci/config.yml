@@ -258,6 +258,9 @@ jobs:
           name: Build iOS app
           command: |
             UUID=`openssl smime -inform der -verify -noverify -in "/Users/distiller/Library/MobileDevice/Provisioning Profiles/app-${ENVIRONMENT}.mobileprovision" | grep -A 1 UUID | sed "s@.*<string>\(.*\)</string>.*@\1@" | tail -n 1`
+            # Xcode discovers profiles by UUID filename; do not pass PROVISIONING_PROFILE to xcodebuild — it
+            # applies to every target (Pods/Capacitor) and conflicts with CODE_SIGN_STYLE=Automatic on App.
+            cp "/Users/distiller/Library/MobileDevice/Provisioning Profiles/app-${ENVIRONMENT}.mobileprovision" "/Users/distiller/Library/MobileDevice/Provisioning Profiles/${UUID}.mobileprovision"
             EXPORT_METHOD=$(if [ "$ENVIRONMENT" == "production" ]; then echo app-store; else echo development; fi)
             CODE_SIGN_IDENTITY=$(if [ "$ENVIRONMENT" == "production" ]; then echo 'iPhone Distribution'; else echo 'iPhone Developer'; fi)
             cd capacitor
@@ -274,7 +277,6 @@ jobs:
               archive \
               DEVELOPMENT_TEAM="6B8FS8W94M" \
               CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY}" \
-              PROVISIONING_PROFILE="${UUID}" \
               IPHONEOS_DEPLOYMENT_TARGET=15
             cat > ios/build/ExportOptions.plist \<<'EOF'
             <?xml version="1.0" encoding="UTF-8"?>
