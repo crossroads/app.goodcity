@@ -271,13 +271,6 @@ jobs:
             EXPORT_METHOD=$(if [ "$ENVIRONMENT" == "production" ]; then echo app-store; else echo debugging; fi)
             CODE_SIGN_IDENTITY=$(if [ "$ENVIRONMENT" == "production" ]; then echo 'iPhone Distribution'; else echo 'iPhone Developer'; fi)
             TEAM_ID="${IOS_DEVELOPMENT_TEAM:-6B8FS8W94M}"
-            APP_BUNDLE_ID=$(if [ "$ENVIRONMENT" == "production" ]; then echo hk.goodcity.app; else echo hk.goodcity.appstaging; fi)
-            PROFILE_NAME=$(
-              openssl smime -inform der -verify -noverify -in "/Users/distiller/Library/MobileDevice/Provisioning Profiles/app-${ENVIRONMENT}.mobileprovision" \
-                | grep -A 1 "<key>Name</key>" \
-                | sed "s@.*<string>\\(.*\\)</string>.*@\\1@" \
-                | tail -n 1
-            )
             cd capacitor
             yarn install --frozen-lockfile
             ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM yarn run rename:package
@@ -307,12 +300,7 @@ jobs:
               '  <key>method</key>' \
               "  <string>${EXPORT_METHOD}</string>" \
               '  <key>signingStyle</key>' \
-              '  <string>manual</string>' \
-              '  <key>provisioningProfiles</key>' \
-              '  <dict>' \
-              "    <key>${APP_BUNDLE_ID}</key>" \
-              "    <string>${PROFILE_NAME}</string>" \
-              '  </dict>' \
+              '  <string>automatic</string>' \
               '  <key>teamID</key>' \
               "  <string>${TEAM_ID}</string>" \
               '</dict>' \
