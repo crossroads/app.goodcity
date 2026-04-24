@@ -268,12 +268,18 @@ jobs:
             ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM yarn run rename:package
             npx cap sync ios
             mkdir -p "$CIRCLE_ARTIFACTS"
+            # Let xcodebuild talk to App Store Connect so automatic signing can resolve/fetch profiles
+            # for the renamed bundle id (e.g. hk.goodcity.appstaging). Same .p8 as fastlane.
+            export APP_STORE_CONNECT_API_KEY_ID="${APPSTORE_CONNECT_API_KEY_ID}"
+            export APP_STORE_CONNECT_API_ISSUER_ID="${APPSTORE_CONNECT_API_KEY_ISSUER_ID}"
+            export APP_STORE_CONNECT_API_KEY_PATH="${HOME}/code/fastlane/AuthKey_${APPSTORE_CONNECT_API_KEY_ID}.p8"
             xcodebuild \
               -workspace ios/App/App.xcworkspace \
               -scheme App \
               -configuration Release \
               -archivePath ios/build/App.xcarchive \
               -destination "generic/platform=iOS" \
+              -allowProvisioningUpdates \
               archive \
               DEVELOPMENT_TEAM="6B8FS8W94M" \
               CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY}" \
@@ -296,7 +302,8 @@ jobs:
               -exportArchive \
               -archivePath ios/build/App.xcarchive \
               -exportOptionsPlist ios/build/ExportOptions.plist \
-              -exportPath "$CIRCLE_ARTIFACTS"
+              -exportPath "$CIRCLE_ARTIFACTS" \
+              -allowProvisioningUpdates
       - store_artifacts:
           path: capacitor/ios/build/export
       - run:
