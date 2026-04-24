@@ -20,6 +20,8 @@ android {
         applicationId "hk.goodcity.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
+        // Local defaults only. CI runs capacitor/rename_package.js, which overwrites versionCode
+        // (270000000 + CIRCLE_BUILD_NUM), versionName (root package.json), and applicationId per ENVIRONMENT.
         versionCode 1
         versionName "0.25.3"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -61,9 +63,9 @@ apply from: 'capacitor.build.gradle'
 
 def servicesJSON = file('google-services.json')
 if (!servicesJSON.exists()) {
-    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+    logger.warn("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
 } else if (!(servicesJSON.text ?: "").trim()) {
-    logger.info("google-services.json is empty, google-services plugin not applied. Push Notifications won't work")
+    logger.warn("google-services.json is empty, google-services plugin not applied. Push Notifications won't work")
 } else {
     try {
         apply plugin: 'com.google.gms.google-services'
