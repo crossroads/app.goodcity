@@ -3,20 +3,21 @@
 
 import Ember from "ember";
 import AjaxPromise from "../utils/ajax-promise";
+const { getOwner } = Ember;
 
 function logError(message, error) {
   if (Ember.Logger && typeof Ember.Logger.error === "function") {
-    Ember.Logger.error(message, error);
+    Ember.Logger.error(message, JSON.stringify(error));
   } else {
     console.error(message, JSON.stringify(error));
   }
 }
 
-function logWarn(message) {
+function logWarn(message, data) {
   if (Ember.Logger && typeof Ember.Logger.warn === "function") {
-    Ember.Logger.warn(message);
+    Ember.Logger.warn(message, JSON.stringify(data));
   } else {
-    console.warn(message);
+    console.warn(message, JSON.stringify(data));
   }
 }
 
@@ -57,7 +58,7 @@ function pushPlatformForRegisterDeviceApi(capPlatform) {
     return "fcm";
   }
   if (capPlatform === "ios") {
-    return "apns";
+    return "aps";
   }
   return "fcm";
 }
@@ -77,14 +78,16 @@ function extractPushRegistrationToken(payload) {
 
 export default Ember.Service.extend(Ember.Evented, {
   session: Ember.inject.service(),
+  store: Ember.inject.service(),
+  messagesUtil: Ember.inject.service("messages"),
 
   init() {
     this._super(...arguments);
-    this.set("lastRegisteredPushToken", null);
-    this.set("lastRegisteredPushPlatform", null);
-    this.set("lastRegisteredPushPosted", false);
-    this.set("_pushRegistrationListenersAttached", false);
-    this.set("_pushRegistrationTearDown", null);
+    this.lastRegisteredPushToken = null;
+    this.lastRegisteredPushPlatform = null;
+    this.lastRegisteredPushPosted = false;
+    this._pushRegistrationListenersAttached = false;
+    this._pushRegistrationTearDown = null;
     const session = this.get("session");
     if (session && typeof session.addObserver === "function") {
       session.addObserver("authToken", this, "_onSessionAuthTokenChanged");
@@ -100,19 +103,19 @@ export default Ember.Service.extend(Ember.Evented, {
     if (session && typeof session.removeObserver === "function") {
       session.removeObserver("authToken", this, "_onSessionAuthTokenChanged");
     }
-    const tearDown = this.get("_pushRegistrationTearDown");
+    const tearDown = this._pushRegistrationTearDown;
     if (typeof tearDown === "function") {
       Ember.RSVP.resolve(tearDown())
         .catch(() => {})
         .finally(() => {
-          this.set("_pushRegistrationTearDown", null);
-          this.set("_pushRegistrationListenersAttached", false);
+          this._pushRegistrationTearDown = null;
+          this._pushRegistrationListenersAttached = false;
         });
     }
   },
 
   _ensurePushRegistrationListeners(push) {
-    if (this.get("_pushRegistrationListenersAttached")) {
+    if (this._pushRegistrationListenersAttached) {
       return Ember.RSVP.resolve();
     }
     if (typeof push.addListener !== "function") {
@@ -124,6 +127,7 @@ export default Ember.Service.extend(Ember.Evented, {
 
     let registrationHandle;
     let registrationErrorHandle;
+    let notificationActionHandle;
     return Ember.RSVP.resolve()
       .then(() => {
         return push.addListener("registration", payload => {
@@ -148,7 +152,7 @@ export default Ember.Service.extend(Ember.Evented, {
           }
           return Ember.RSVP.all(removals).catch(() => {});
         };
-        this.set("_pushRegistrationTearDown", tearDown);
+        this._pushRegistrationTearDown = tearDown;
         return push.addListener("registrationError", err => {
           Ember.run(this, function() {
             this._onPushRegistrationError(err);
@@ -157,6 +161,14 @@ export default Ember.Service.extend(Ember.Evented, {
       })
       .then(handle => {
         registrationErrorHandle = handle;
+        return push.addListener("pushNotificationActionPerformed", data => {
+          Ember.run(this, function() {
+            this._processTappedNotification(data);
+          });
+        });
+      })
+      .then(handle => {
+        notificationActionHandle = handle;
 
         const tearDown = () => {
           const removals = [];
@@ -173,34 +185,42 @@ export default Ember.Service.extend(Ember.Evented, {
             ) {
               removals.push(registrationErrorHandle.remove());
             }
+            if (
+              notificationActionHandle &&
+              typeof notificationActionHandle.remove === "function"
+            ) {
+              removals.push(notificationActionHandle.remove());
+            }
           } catch (e) {
             logWarn("cordova service: push listener teardown failed");
           }
           return Ember.RSVP.all(removals).catch(() => {});
         };
-        this.set("_pushRegistrationTearDown", tearDown);
-        this.set("_pushRegistrationListenersAttached", true);
+        this._pushRegistrationTearDown = tearDown;
+        this._pushRegistrationListenersAttached = true;
       })
       .catch(e => {
         logError("cordova service: PushNotifications addListener failed", e);
-        const tearDown = this.get("_pushRegistrationTearDown");
+        const tearDown = this._pushRegistrationTearDown;
         if (typeof tearDown === "function") {
           Ember.RSVP.resolve(tearDown())
             .catch(() => {})
             .finally(() => {
               Ember.run(this, function() {
-                this.set("_pushRegistrationTearDown", null);
-                this.set("_pushRegistrationListenersAttached", false);
+                this._pushRegistrationTearDown = null;
+                this._pushRegistrationListenersAttached = false;
               });
               registrationHandle = undefined;
               registrationErrorHandle = undefined;
+              notificationActionHandle = undefined;
             });
         } else {
           Ember.run(this, function() {
-            this.set("_pushRegistrationListenersAttached", false);
+            this._pushRegistrationListenersAttached = false;
           });
           registrationHandle = undefined;
           registrationErrorHandle = undefined;
+          notificationActionHandle = undefined;
         }
       });
   },
@@ -241,39 +261,39 @@ export default Ember.Service.extend(Ember.Evented, {
       cap && typeof cap.getPlatform === "function" ? cap.getPlatform() : "";
 
     if (
-      token === this.get("lastRegisteredPushToken") &&
-      capPlatform === this.get("lastRegisteredPushPlatform") &&
-      this.get("lastRegisteredPushPosted")
+      token === this.lastRegisteredPushToken &&
+      capPlatform === this.lastRegisteredPushPlatform &&
+      this.lastRegisteredPushPosted
     ) {
       return;
     }
 
     if (
-      token !== this.get("lastRegisteredPushToken") ||
-      capPlatform !== this.get("lastRegisteredPushPlatform")
+      token !== this.lastRegisteredPushToken ||
+      capPlatform !== this.lastRegisteredPushPlatform
     ) {
-      this.set("lastRegisteredPushPosted", false);
+      this.lastRegisteredPushPosted = false;
     }
 
-    this.set("lastRegisteredPushToken", token);
-    this.set("lastRegisteredPushPlatform", capPlatform);
+    this.lastRegisteredPushToken = token;
+    this.lastRegisteredPushPlatform = capPlatform;
     this.trigger("pushDeviceTokenRegistered", { token, platform: capPlatform });
     this._registerPushTokenWithApi(token, capPlatform);
   },
 
   _registerPushTokenWithApi(registrationId, capPlatform) {
-    const id = registrationId == null ? "" : String(registrationId).trim();
-    if (!id) {
+    const handle = registrationId == null ? "" : String(registrationId).trim();
+    if (!handle) {
       logWarn(
-        "cordova service: skipping POST /auth/register_device: empty registration_id (Azure NH rejects FcmV1RegistrationId eq '')."
+        "cordova service: skipping POST /auth/register_device: empty handle (Azure NH rejects FcmV1RegistrationId eq '')."
       );
       return;
     }
 
     if (
-      id === this.get("lastRegisteredPushToken") &&
-      capPlatform === this.get("lastRegisteredPushPlatform") &&
-      this.get("lastRegisteredPushPosted")
+      handle === this.lastRegisteredPushToken &&
+      capPlatform === this.lastRegisteredPushPlatform &&
+      this.lastRegisteredPushPosted
     ) {
       return;
     }
@@ -287,16 +307,107 @@ export default Ember.Service.extend(Ember.Evented, {
     }
 
     const platform = pushPlatformForRegisterDeviceApi(capPlatform);
+    logWarn("cordova service: POST /auth/register_device", {
+      platform: platform,
+      handle_prefix: handle.slice(0, 12),
+      handle_length: handle.length
+    });
     new AjaxPromise("/auth/register_device", "POST", authToken, {
-      registration_id: id,
+      handle: handle,
       platform: platform
     })
       .then(() => {
-        this.set("lastRegisteredPushPosted", true);
+        this.lastRegisteredPushPosted = true;
       })
       .catch(xhr => {
         logError("cordova service: POST /auth/register_device failed", xhr);
       });
+  },
+
+  _notificationPayloadFromAction(data) {
+    if (!data) {
+      return null;
+    }
+    const notification = data.notification || data;
+    const payload =
+      (notification.data && notification.data.payload) ||
+      notification.data ||
+      notification.payload ||
+      notification;
+    if (typeof payload === "string") {
+      try {
+        return JSON.parse(payload);
+      } catch (e) {
+        return null;
+      }
+    }
+    return payload;
+  },
+
+  _processTappedNotification(data) {
+    const payload = this._notificationPayloadFromAction(data);
+    if (!payload || !payload.category) {
+      logWarn(
+        "cordova service: pushNotificationActionPerformed without usable payload",
+        data
+      );
+      return;
+    }
+
+    const notifications = getOwner(this).lookup("controller:notifications");
+    if (!notifications) {
+      logWarn("cordova service: controller:notifications missing");
+      return;
+    }
+
+    if (payload.category === "incoming_call") {
+      notifications.acceptCall(payload);
+    }
+
+    notifications.setRoute(payload);
+
+    if (payload.category === "message") {
+      const hasMessage = this.get("store").peekRecord(
+        "message",
+        payload.message_id
+      );
+      if (hasMessage) {
+        notifications.transitionToRoute.apply(notifications, payload.route);
+        return;
+      }
+
+      const loadingView = getOwner(this)
+        .lookup("component:loading")
+        .append();
+      let messageUrl;
+      if (payload.item_id) {
+        messageUrl = `/messages?item_id=${payload.item_id}`;
+      } else {
+        messageUrl = `/messages?offer_id=${payload.offer_id}`;
+      }
+      new AjaxPromise(messageUrl, "GET", this.get("session.authToken"), {})
+        .then(data => {
+          this.get("store").pushPayload(data);
+          notifications.transitionToRoute.apply(notifications, payload.route);
+        })
+        .finally(() => loadingView.destroy());
+      return;
+    }
+
+    notifications.transitionToRoute.apply(notifications, payload.route);
+  },
+
+  isAndroid() {
+    const cap = (typeof window !== "undefined" && window.Capacitor) || null;
+    if (cap && typeof cap.getPlatform === "function") {
+      return cap.getPlatform() === "android";
+    }
+    return (
+      typeof window !== "undefined" &&
+      window.device &&
+      ["android", "Android", "amazon-fireos"].indexOf(window.device.platform) >=
+        0
+    );
   },
 
   isIOS() {
@@ -524,7 +635,7 @@ export default Ember.Service.extend(Ember.Evented, {
         if (!perms) {
           return;
         }
-        if (!this.get("_pushRegistrationListenersAttached")) {
+        if (!this._pushRegistrationListenersAttached) {
           logError(
             "cordova service: initiatePushNotifications: push listeners not attached; skipping register."
           );
