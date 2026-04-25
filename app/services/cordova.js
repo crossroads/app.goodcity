@@ -85,16 +85,21 @@ export default Ember.Service.extend(Ember.Evented, {
     this.set("lastRegisteredPushPosted", false);
     this.set("_pushRegistrationListenersAttached", false);
     this.set("_pushRegistrationTearDown", null);
-    this.addObserver("session.authToken", this, "_onSessionAuthTokenChanged");
+    const session = this.get("session");
+    if (session && typeof session.addObserver === "function") {
+      session.addObserver("authToken", this, "_onSessionAuthTokenChanged");
+      if (session.get("authToken")) {
+        Ember.run.once(this, "_onSessionAuthTokenChanged");
+      }
+    }
   },
 
   willDestroy() {
     this._super(...arguments);
-    this.removeObserver(
-      "session.authToken",
-      this,
-      "_onSessionAuthTokenChanged"
-    );
+    const session = this.get("session");
+    if (session && typeof session.removeObserver === "function") {
+      session.removeObserver("authToken", this, "_onSessionAuthTokenChanged");
+    }
     const tearDown = this.get("_pushRegistrationTearDown");
     if (typeof tearDown === "function") {
       Ember.RSVP.resolve(tearDown())
@@ -537,8 +542,7 @@ export default Ember.Service.extend(Ember.Evented, {
       });
   },
 
-  appLoad() {
-    // Push registration is intentionally not run on app start. We only attempt it
-    // after login (see session.authToken observer) or explicit user action.
-  }
+  // Compatibility no-op for older startup paths. Push registration is triggered
+  // after login via session.authToken, not from app start.
+  appLoad() {}
 });
