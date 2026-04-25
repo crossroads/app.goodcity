@@ -1,7 +1,7 @@
+/* jshint node: true */
 module.exports = {
-  coverageFolder: 'coverage',
-  excludes: [
-    '*/routes/**/*', '*/**/router.js'
-  ],
-  parallel: true
-}
+  coverageFolder: "coverage",
+  excludes: ["*/routes/**/*", "*/**/router.js"],
+  parallel: true,
+  useBabelInstrumenter: false
+};

@@ -6,8 +6,29 @@
 /* viewport fix for iOS devices with button overlays
    https://cordova.apache.org/docs/en/latest/core/features/splashscreen/index.html?#ios-specific-information
 */
+html,
 body {
-  padding: env(safe-area-inset-top, 0px);
+  margin: 0;
+  width: 100%;
+  overflow-x: hidden;
+  /* Prevent the safe-area inset from showing as white on iOS notched devices */
+  background-color: #0b2b4d;
+}
+
+body {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* shared-goodcity: .sticky_title_bar { position: fixed; top: 0 } — fixed layers use the
+   viewport, so they ignore body safe-area padding and collide with the status bar / cutout.
+   Top inset is handled only here (not duplicated in Android MainActivity content padding). */
+.sticky_title_bar {
+  top: env(safe-area-inset-top, 0px);
+}
+
+// Hide iOS "smart app banner" inside native shells (Capacitor/Cordova)
+.is-native-shell .ember-smart-banner {
+  display: none !important;
 }
 
 /* template specific */

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <!-- Ensure inset padding area matches app background -->
+        <item name="android:windowBackground">@color/goodcity_blue</item>
+        <item name="android:background">@color/goodcity_blue</item>
+        <item name="android:statusBarColor">@color/goodcity_blue</item>
+        <item name="android:navigationBarColor">@color/goodcity_blue</item>
+    </style>
+
+
+    <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@drawable/splash</item>
+        <!-- Ensure the app transitions to the real theme after splash -->
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
+
+        <!-- Keep system bars consistent during splash as well -->
+        <item name="android:statusBarColor">@color/goodcity_blue</item>
+        <item name="android:navigationBarColor">@color/goodcity_blue</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>

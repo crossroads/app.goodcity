@@ -1,5 +1,56 @@
 /* jshint node: true */
 const pkgJson = require("../package.json");
+const url = require("url");
+
+function uniqueStrings(values) {
+  const out = [];
+  const seen = {};
+  (values || []).forEach(v => {
+    if (!v) {
+      return;
+    }
+    if (seen[v]) {
+      return;
+    }
+    seen[v] = true;
+    out.push(v);
+  });
+  return out;
+}
+
+// Adds http(s) origins plus ws/wss equivalents for websocket-capable hosts.
+function cspConnectOriginsFromAppUrl(urlString) {
+  if (!urlString) {
+    return [];
+  }
+
+  let parsed;
+  try {
+    parsed = new url.URL(urlString);
+  } catch (e) {
+    return [];
+  }
+
+  const origins = [parsed.origin];
+
+  if (parsed.protocol === "https:") {
+    origins.push("wss://" + parsed.host);
+    origins.push("ws://" + parsed.host);
+  } else if (parsed.protocol === "http:") {
+    origins.push("ws://" + parsed.host);
+    origins.push("wss://" + parsed.host);
+  } else if (parsed.protocol === "wss:") {
+    origins.push("https://" + parsed.host);
+    origins.push("http://" + parsed.host);
+    origins.push("ws://" + parsed.host);
+  } else if (parsed.protocol === "ws:") {
+    origins.push("http://" + parsed.host);
+    origins.push("https://" + parsed.host);
+    origins.push("wss://" + parsed.host);
+  }
+
+  return uniqueStrings(origins);
+}
 
 module.exports = function(environment) {
   environment = process.env.ENVIRONMENT || environment || "development";
@@ -33,7 +84,7 @@ module.exports = function(environment) {
       }
     },
     contentSecurityPolicy: {
-      "default-src": "'self' gap://ready file://* *",
+      "default-src": "'self' http://localhost file://* *",
       "img-src":
         "'self' data: https://res.cloudinary.com filesystem: * https://goodcityimages.blob.core.windows.net",
       "style-src": "'self' 'unsafe-inline' https://maxcdn.bootstrapcdn.com",
@@ -80,11 +131,6 @@ module.exports = function(environment) {
       IOS_APP_ID: "1012253845"
     },
 
-    cordova: {
-      enabled: process.env.EMBER_CLI_CORDOVA !== "0",
-      rebuildOnChange: false,
-      emulate: false
-    },
     coffeeOptions: {
       blueprints: false
     },
@@ -101,19 +147,30 @@ module.exports = function(environment) {
     // ENV.APP.LOG_VIEW_LOOKUPS = true;
 
     // RESTAdapter Settings
-    ENV.APP.API_HOST_URL = "http://localhost:3000";
-    ENV.APP.SOCKETIO_WEBSERVICE_URL = "http://localhost:1337/goodcity";
+    // Allow running the app in development mode while pointing at a non-local API
+    // (useful for mobile simulators/devices).
+    ENV.APP.API_HOST_URL = process.env.API_HOST_URL || "http://localhost:3000";
+    ENV.APP.SOCKETIO_WEBSERVICE_URL =
+      process.env.SOCKETIO_WEBSERVICE_URL || "http://localhost:1337/goodcity";
 
-    ENV.contentSecurityPolicy["connect-src"] = [
-      "http://localhost:4200",
-      "http://localhost:3000",
-      "http://localhost:1337",
-      "ws://localhost:1337",
-      "wss://localhost:1337",
-      "https://api.cloudinary.com",
-      "https://api.rollbar.com",
-      "https://www.google-analytics.com"
-    ].join(" ");
+    ENV.contentSecurityPolicy["connect-src"] = uniqueStrings(
+      [
+        "http://localhost:4200",
+        "http://localhost:3000",
+        "http://localhost:1337",
+        "ws://localhost:1337",
+        "wss://localhost:1337",
+        "https://api-staging.goodcity.hk",
+        "https://socket-staging.goodcity.hk",
+        "wss://socket-staging.goodcity.hk",
+        "ws://socket-staging.goodcity.hk",
+        "https://api.cloudinary.com",
+        "https://api.rollbar.com",
+        "https://www.google-analytics.com"
+      ]
+        .concat(cspConnectOriginsFromAppUrl(ENV.APP.API_HOST_URL))
+        .concat(cspConnectOriginsFromAppUrl(ENV.APP.SOCKETIO_WEBSERVICE_URL))
+    ).join(" ");
     //Only added for development env. to fix issue related to BLOB: object
     ENV.contentSecurityPolicy["img-src"] = [
       "http://localhost:4200",
@@ -124,7 +181,6 @@ module.exports = function(environment) {
   }
 
   if (environment === "test") {
-    ENV.cordova.enabled = false;
     // Testem prefers this...
     ENV.baseURL = "/";
     ENV.locationType = "auto";
@@ -140,8 +196,9 @@ module.exports = function(environment) {
   }
 
   if (environment === "production") {
-    if (!process.env.ENVIRONMENT)
+    if (!process.env.ENVIRONMENT) {
       throw "Please pass an appropriate ENVIRONMENT=(staging|production) param.";
+    }
     // RESTAdapter Settings
     ENV.APP.API_HOST_URL = "https://api.goodcity.hk";
     ENV.APP.SOCKETIO_WEBSERVICE_URL = "https://socket.goodcity.hk:81/goodcity";

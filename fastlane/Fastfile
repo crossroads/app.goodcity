@@ -1,7 +1,7 @@
 require 'json'
 require_relative "./release_utils"
 
-update_fastlane
+# Version from Gemfile.lock; update_fastlane breaks bundle exec after self-update.
 
 default_platform :android
 
@@ -100,9 +100,45 @@ end
 platform :android do
 
   before_all do
-    ENV["SUPPLY_APK"] = ENV["TESTFAIRY_IPA_PATH"] = Dir["#{ENV['APK_FILE_PATH']}"].first
-    ENV["SUPPLY_JSON_KEY"] = File.join(Dir.pwd, "google-play-key.json")
-    raise "Google Play private key file not found! (#{ENV["SUPPLY_JSON_KEY"]})" unless File.exist?(ENV["SUPPLY_JSON_KEY"])
+    aab_pattern = (ENV["AAB_FILE_PATH"] || "").strip
+    apk_pattern = (ENV["APK_FILE_PATH"] || "").strip
+
+    aab_path = aab_pattern.empty? ? nil : Dir[aab_pattern].compact.first
+    apk_path = apk_pattern.empty? ? nil : Dir[apk_pattern].compact.first
+
+    artifact_path = aab_path || apk_path
+    if artifact_path.nil?
+      details = []
+      details << "AAB_FILE_PATH=#{aab_pattern.inspect}" unless aab_pattern.empty?
+      details << "APK_FILE_PATH=#{apk_pattern.inspect}" unless apk_pattern.empty?
+
+      UI.user_error!(
+        "Could not resolve an Android artifact from AAB/APK globs. " \
+        "Set non-empty AAB_FILE_PATH and/or APK_FILE_PATH. " \
+        "Details: #{details.join(" | ")}"
+      )
+    end
+
+    if artifact_path.end_with?(".aab")
+      ENV["SUPPLY_AAB"] = artifact_path
+    end
+
+    if artifact_path.end_with?(".apk")
+      ENV["SUPPLY_APK"] = artifact_path
+    end
+
+    # TestFairy expects an APK path (env name is historical); never pass an .aab.
+    testfairy_apk =
+      if apk_path
+        apk_path
+      elsif artifact_path.end_with?(".apk")
+        artifact_path
+      end
+    if testfairy_apk
+      ENV["TESTFAIRY_IPA_PATH"] = testfairy_apk
+    else
+      ENV.delete("TESTFAIRY_IPA_PATH")
+    end
   end
 
   desc "Generate staging build (just upload to TestFairy)"
@@ -113,7 +149,17 @@ platform :android do
 
   desc "Upload to GooglePlay beta track"
   lane :production do
-    raise_if_no_env_var(["SUPPLY_APK", "SUPPLY_JSON_KEY"])
+    aab_ok = !(ENV["SUPPLY_AAB"].to_s.strip.empty?)
+    apk_ok = !(ENV["SUPPLY_APK"].to_s.strip.empty?)
+    raise "Please specify ENV VAR [AAB_FILE_PATH] or [APK_FILE_PATH]" unless aab_ok || apk_ok
+
+    json_key_candidates = [
+      File.join(Dir.pwd, "fastlane", "google-play-key.json"),
+      File.join(Dir.pwd, "google-play-key.json")
+    ]
+    ENV["SUPPLY_JSON_KEY"] = json_key_candidates.find { |p| File.exist?(p) }
+    raise "Google Play private key file not found! (tried #{json_key_candidates.join(", ")})" unless ENV["SUPPLY_JSON_KEY"]
+
     supply(
       track: "beta",
       skip_upload_images: true,

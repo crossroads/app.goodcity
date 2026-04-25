@@ -1,8 +1,7 @@
-import Ember from 'ember';
-import messageBox from '../templates/components/message-box';
+import Ember from "ember";
+import messageBox from "../templates/components/message-box";
 
 export default Ember.Component.extend({
-
   layout: messageBox,
   message: "",
   btn1Text: "",
@@ -23,18 +22,36 @@ export default Ember.Component.extend({
 
   actions: {
     btn1Click() {
-      var callbackOutput = true;
-      if (this.btn1Callback) {
-        callbackOutput = this.btn1Callback();
-      }
-      if(callbackOutput !== false) { this.close(); }
+      const promise = Ember.RSVP.resolve().then(() =>
+        this.btn1Callback ? this.btn1Callback() : false
+      );
+      promise
+        .then(result => {
+          if (result !== false && !this.isDestroyed && !this.isDestroying) {
+            this.close();
+          }
+        })
+        .catch(err => {
+          if (!this.isDestroyed && !this.isDestroying) {
+            this.close();
+          }
+          throw err;
+        });
     },
 
     btn2Click() {
-      if (this.btn2Callback) {
-        this.btn2Callback();
-      }
-      this.close();
+      Ember.RSVP.resolve()
+        .then(() => (this.btn2Callback ? this.btn2Callback() : undefined))
+        .catch(e => {
+          if (Ember.Logger && Ember.Logger.warn) {
+            Ember.Logger.warn("message-box btn2Callback", e);
+          }
+        })
+        .then(() => {
+          if (!this.isDestroyed && !this.isDestroying) {
+            this.close();
+          }
+        });
     },
 
     closeModal() {

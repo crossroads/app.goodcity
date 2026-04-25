@@ -50,15 +50,7 @@ export default Ember.Controller.extend({
     },
 
     openSettings() {
-      window.cordova.plugins.settings.open(
-        "notification_id",
-        function() {
-          console.log("opened settings");
-        },
-        function() {
-          console.log("error opened settings");
-        }
-      );
+      return this.get("cordova").openIosAppSettings();
     }
   }
 });

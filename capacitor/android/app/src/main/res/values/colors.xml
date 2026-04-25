@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Match web app background (#0b2b4d) -->
+    <color name="goodcity_blue">#0B2B4D</color>
+
+    <!-- Legacy theme colors (kept for AppCompat parent) -->
+    <color name="colorPrimary">#0B2B4D</color>
+    <color name="colorPrimaryDark">#0B2B4D</color>
+    <color name="colorAccent">#F34D4F</color>
+</resources>
+

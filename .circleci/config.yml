@@ -4,7 +4,7 @@ aliases:
 
   - defaults: &defaults
       docker:
-        - image: cimg/node:12.22-browsers
+        - image: cimg/node:22.14.0-browsers
       working_directory: ~/code
   - &restore-repo-cache
       key: app-goodcity-repo-{{ .Environment.CIRCLE_SHA1 }}
@@ -46,6 +46,7 @@ orbs:
   azure-cli: circleci/azure-cli@1.2.2
   browser-tools: circleci/browser-tools@2.2.0
   ruby: circleci/ruby@2.5.4
+  node: circleci/node@7.2.1
 
 jobs:
   checkout_code:
@@ -121,12 +122,11 @@ jobs:
           command: |
             ENVIRONMENT=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo "production"; else echo "staging"; fi)
             APP_SHA=$(echo $CIRCLE_SHA1 | cut -c1-7)
-            EMBER_CLI_CORDOVA=0 ENVIRONMENT=${ENVIRONMENT} APP_SHA=${APP_SHA} yarn run ember build --environment=production
-      - run: mv dist/ dist-www
+            ENVIRONMENT=${ENVIRONMENT} APP_SHA=${APP_SHA} yarn run ember build --environment=production
       - persist_to_workspace:
           root: .
           paths:
-            - dist-www/
+            - dist/
 
   www_deploy:
     <<: *defaults
@@ -139,7 +139,6 @@ jobs:
       - save_cache: *save-bundler-cache
       - attach_workspace:
           at: ~/code
-      - run: mv dist-www/ dist
       - azure-cli/install
       - azure-cli/login-with-service-principal
       - run:
@@ -157,34 +156,15 @@ jobs:
             ASSET_HOST_URL=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo "https://app.goodcity.hk/assets"; else echo "https://app-staging.goodcity.hk/assets"; fi)
             curl https://api.rollbar.com/api/1/sourcemap/download -F access_token="${ROLLBAR_KEY}" -F version="${APP_VERSION}" -F minified_url=$ASSET_HOST_URL/$SOURCE_MAP
 
-  ember_cordova_build:
-    <<: *defaults
-    environment:
-      JOBS: 1 # stops ember running out of memory when building
-    steps:
-      - restore_cache: *restore-repo-cache
-      - restore_cache: *restore-yarn-cache
-      - restore_cache: *restore-bower-cache
-      - run:
-          name: Ember build
-          command: |
-            APP_SHA=$(echo $CIRCLE_SHA1 | cut -c1-7)
-            APP_SHARED_SHA=$(grep "resolved.*shared.goodcity" yarn.lock | cut -d '#' -f2 | sed 's,\",,g')
-            ENVIRONMENT=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo "production"; else echo "staging"; fi)
-            EMBER_CLI_CORDOVA=1 ENVIRONMENT=${ENVIRONMENT} yarn run ember build --environment=production
-      - run: mv dist/ cordova/www
-      - persist_to_workspace:
-          root: .
-          paths:
-            - cordova/www
-
   android_build_and_deploy:
     <<: *defaults
     docker:
       - image: cimg/android:2025.10-browsers
     environment:
       JVM_OPTS: -Xmx3200m
-      CIRCLE_ARTIFACTS: /home/circleci/code/cordova/platforms/android/build/outputs/apk
+      # cimg/android:2025.10 sets JAVA_HOME to JDK 21. Capacitor 8 native modules compile with Java 21;
+      # do not override to JDK 17 or :capacitor-android fails with "invalid source release: 21".
+      CIRCLE_ARTIFACTS: /home/circleci/code/capacitor/android/app/build/outputs
     steps:
       - ruby/install:
           version: '3.4.3'
@@ -199,29 +179,51 @@ jobs:
           name: Setup Environment variables
           command: |
               echo 'export ENVIRONMENT=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo production; else echo staging; fi)' >> $BASH_ENV
-              echo 'export PATH=$PATH:/home/circleci/code/cordova/node_modules/.bin' >> $BASH_ENV
+              echo 'if [ "$ENVIRONMENT" == "production" ]; then export AAB_FILE_PATH="/home/circleci/code/capacitor/android/app/build/outputs/bundle/release/*.aab"; else export APK_FILE_PATH="/home/circleci/code/capacitor/android/app/build/outputs/apk/debug/*.apk"; fi' >> $BASH_ENV
       - run: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
       - azure-cli/install
       - azure-cli/login-with-service-principal
-      - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n app-$ENVIRONMENT-google-services.json -f ~/code/cordova/google-services.json
-      - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n goodcity.keystore -f ~/code/cordova/goodcity.keystore
-      - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n google-play-key.json -f ~/code/fastlane/google-play-key.json
+      - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n app-$ENVIRONMENT-google-services.json -f ~/code/capacitor/android/app/google-services.json
+      - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n goodcity.keystore -f ~/code/capacitor/android/app/goodcity.keystore
+      - run:
+          name: Download Google Play service account key (production only)
+          command: |
+            set -eo pipefail
+            need_play_key=0
+            if [ "${CIRCLE_BRANCH}" = "live" ]; then need_play_key=1; fi
+            if [ "${CI_ENV:-}" = "production" ]; then need_play_key=1; fi
+            case "$(printf '%s' "${FASTLANE_PLAY_STORE_SCOPE:-}" | tr '[:upper:]' '[:lower:]')" in
+              *production*) need_play_key=1 ;;
+            esac
+            if [ "$need_play_key" -ne 1 ]; then
+              echo "Skipping google-play-key.json (not a production Play Store context)."
+              exit 0
+            fi
+            az storage blob download --account-name "${GOODCITY_STORAGE}" -c ci-app-secrets -n google-play-key.json -f ~/code/fastlane/google-play-key.json
+      - node/install:
+          node-version: "22.14.0"
+          yarn-version: "1.22.22"
       - run:
           name: Build android app
           command: |
-            npm install cordova@12
-            node rename_package.js
-            cordova platform add android
+            cd capacitor
+            yarn install --frozen-lockfile
+            ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM yarn run rename:package
+            npx cap sync android
             if [ "$ENVIRONMENT" == "production" ]; then
-              cordova build android --release -- \
-                --packageType=apk --keystore=goodcity.keystore --storePassword="${GOODCITY_KEYSTORE_PASSWORD}" \
-                --alias="${GOODCITY_KEYSTORE_ALIAS}" --password="${GOODCITY_KEYSTORE_PASSWORD}"
+              cd android && ./gradlew bundleRelease
             else
-              cordova build android --debug --device
+              cd android && ./gradlew assembleDebug
             fi
-          working_directory: cordova
+            if [ -n "${CIRCLE_BUILD_NUM:-}" ]; then
+              vc="$(awk '/versionCode /{print $2; exit}' app/build.gradle | tr -d '\r')"
+              if ! [ "${vc:-0}" -ge 270000000 ] 2>/dev/null; then
+                echo "Android versionCode after rename:package must be >= 270000000 (see rename_package.js ANDROID_BUILD_VERSION_SEED); got: ${vc:-empty}"
+                exit 1
+              fi
+            fi
       - store_artifacts:
-          path: cordova/platforms/android/app/build/outputs/apk/
+          path: capacitor/android/app/build/outputs/
       - run:
           name: release android build
           command: bundle exec fastlane android ${ENVIRONMENT}
@@ -229,12 +231,12 @@ jobs:
 
   ios_build_and_deploy:
     macos:
-      xcode: "16.4.0"
-    resource_class: macos.m1.medium.gen1
+      xcode: "26.4.0"
+    resource_class: m4pro.medium
     working_directory: ~/code
     shell: /bin/bash --login -eo pipefail
     environment:
-      CIRCLE_ARTIFACTS: /Users/distiller/code/cordova/platforms/ios/build/Release-iphoneos
+      CIRCLE_ARTIFACTS: /Users/distiller/code/capacitor/ios/build/export
       HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
       - checkout
@@ -247,7 +249,7 @@ jobs:
               echo 'export ENVIRONMENT=$(if [ "$CIRCLE_BRANCH" == "live" ]; then echo production; else echo staging; fi)' >> $BASH_ENV
               echo 'export PATH=$PATH:`npm bin`' >> $BASH_ENV
       - restore_cache: *restore-ios-bundler-cache
-      - run: rbenv local 3.4.3
+      - run: rbenv local 3.4.8
       - run: bundle config set --local deployment 'true' && (bundle check || bundle install --jobs=2 --retry=3)
       - save_cache: *save-ios-bundler-cache
       - run: az login --service-principal --tenant ${AZURE_SP_TENANT} -u ${AZURE_SP} -p ${AZURE_SP_PASSWORD}
@@ -256,27 +258,70 @@ jobs:
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n AuthKey_${APPSTORE_CONNECT_API_KEY_ID}.p8 -f ~/code/fastlane/AuthKey_${APPSTORE_CONNECT_API_KEY_ID}.p8
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n hk.goodcity.${ENVIRONMENT}.p12 -f ~/code/fastlane/hk.goodcity.${ENVIRONMENT}.p12
       - run: bundle exec fastlane ios prepare_certificates cert:hk.goodcity.${ENVIRONMENT}.p12
+      - node/install:
+          node-version: "22.14.0"
+          yarn-version: "1.22.22"
       - run:
           name: Build iOS app
           command: |
-            npm install cordova@12
-            node rename_package.js
-            bundle exec yarn run cordova platform add ios@7
             UUID=`openssl smime -inform der -verify -noverify -in "/Users/distiller/Library/MobileDevice/Provisioning Profiles/app-${ENVIRONMENT}.mobileprovision" | grep -A 1 UUID | sed "s@.*<string>\(.*\)</string>.*@\1@" | tail -n 1`
-            PACKAGE_TYPE=$(if [ "$ENVIRONMENT" == "production" ]; then echo app-store; else echo development; fi)
+            # Xcode discovers profiles by UUID filename; do not pass PROVISIONING_PROFILE to xcodebuild — it
+            # applies to every target (Pods/Capacitor) and conflicts with CODE_SIGN_STYLE=Automatic on App.
+            cp "/Users/distiller/Library/MobileDevice/Provisioning Profiles/app-${ENVIRONMENT}.mobileprovision" "/Users/distiller/Library/MobileDevice/Provisioning Profiles/${UUID}.mobileprovision"
+            EXPORT_METHOD=$(if [ "$ENVIRONMENT" == "production" ]; then echo app-store; else echo debugging; fi)
             CODE_SIGN_IDENTITY=$(if [ "$ENVIRONMENT" == "production" ]; then echo 'iPhone Distribution'; else echo 'iPhone Developer'; fi)
-            bundle exec yarn run cordova build ios --release --device --codeSignIdentity="${CODE_SIGN_IDENTITY}" --developmentTeam="6B8FS8W94M" \
-               --packageType="${PACKAGE_TYPE}" --automaticProvisioning=true  --buildFlag="IPHONEOS_DEPLOYMENT_TARGET=13" \
-               --provisioningProfile="${UUID}"
-          working_directory: cordova
+            TEAM_ID="${IOS_DEVELOPMENT_TEAM:-6B8FS8W94M}"
+            cd capacitor
+            yarn install --frozen-lockfile
+            ENVIRONMENT=$ENVIRONMENT CIRCLE_BUILD_NUM=$CIRCLE_BUILD_NUM yarn run rename:package
+            npx cap sync ios
+            mkdir -p "$CIRCLE_ARTIFACTS"
+            # ASC API auth for headless CI: env vars alone still yield "No Accounts"; xcodebuild needs these flags.
+            AUTHKEY_P8="${HOME}/code/fastlane/AuthKey_${APPSTORE_CONNECT_API_KEY_ID}.p8"
+            xcodebuild \
+              -workspace ios/App/App.xcworkspace \
+              -scheme App \
+              -configuration Release \
+              -archivePath ios/build/App.xcarchive \
+              -destination "generic/platform=iOS" \
+              -allowProvisioningUpdates \
+              -authenticationKeyPath "${AUTHKEY_P8}" \
+              -authenticationKeyID "${APPSTORE_CONNECT_API_KEY_ID}" \
+              -authenticationKeyIssuerID "${APPSTORE_CONNECT_API_KEY_ISSUER_ID}" \
+              archive \
+              DEVELOPMENT_TEAM="${TEAM_ID}" \
+              CODE_SIGN_IDENTITY="${CODE_SIGN_IDENTITY}" \
+              IPHONEOS_DEPLOYMENT_TARGET=15
+            printf '%s\n' \
+              '<?xml version="1.0" encoding="UTF-8"?>' \
+              '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">' \
+              '<plist version="1.0">' \
+              '<dict>' \
+              '  <key>method</key>' \
+              "  <string>${EXPORT_METHOD}</string>" \
+              '  <key>signingStyle</key>' \
+              '  <string>automatic</string>' \
+              '  <key>teamID</key>' \
+              "  <string>${TEAM_ID}</string>" \
+              '</dict>' \
+              '</plist>' \
+              > ios/build/ExportOptions.plist
+            xcodebuild \
+              -exportArchive \
+              -archivePath ios/build/App.xcarchive \
+              -exportOptionsPlist ios/build/ExportOptions.plist \
+              -exportPath "$CIRCLE_ARTIFACTS" \
+              -allowProvisioningUpdates \
+              -authenticationKeyPath "${AUTHKEY_P8}" \
+              -authenticationKeyID "${APPSTORE_CONNECT_API_KEY_ID}" \
+              -authenticationKeyIssuerID "${APPSTORE_CONNECT_API_KEY_ISSUER_ID}"
       - store_artifacts:
-          path: cordova/platforms/ios/build/Release-iphoneos
+          path: capacitor/ios/build/export
       - run:
           name: Release ios build
           command: bundle exec fastlane ios ${ENVIRONMENT}
 
 workflows:
-  version: 2
   build-test-and-deploy:
     jobs:
       - checkout_code
@@ -297,30 +342,24 @@ workflows:
             - tests
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|ionic-capacitor)$/
       - www_deploy:
           requires:
             - www_build
           filters:
             branches:
-              only: /^(master|live)$/
-      - ember_cordova_build:
-          requires:
-            - package_dependencies
-          filters:
-            branches:
-              only: /^(master|live)$/
+              only: /^(master|live|ionic-capacitor)$/
       - android_build_and_deploy:
           requires:
             - tests
-            - ember_cordova_build
+            - www_build
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|ionic-capacitor)$/
       - ios_build_and_deploy:
           requires:
             - tests
-            - ember_cordova_build
+            - www_build
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|ionic-capacitor)$/
