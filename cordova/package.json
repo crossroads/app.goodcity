@@ -7,8 +7,8 @@
     "yarn": "^1.22.22"
   },
   "devDependencies": {
-    "@havesource/cordova-plugin-push": "github:havesource/cordova-plugin-push",
-    "com.nrswolf.cordova.push-notifications-status": "github:nrswolf/cordova-plugin-push-notifications-status",
+    "@havesource/cordova-plugin-push": "github:havesource/cordova-plugin-push#d50a41b8edd6d159914814d16ae8f486c29698ca",
+    "com.nrswolf.cordova.push-notifications-status": "github:nrswolf/cordova-plugin-push-notifications-status#d4661da2369425b4227010f8a88350de1f811ba9",
     "cordova-android": "^15.1.0",
     "cordova-android-support-gradle-release": "^3.0.1",
     "cordova-ios": "^8.1.1",
