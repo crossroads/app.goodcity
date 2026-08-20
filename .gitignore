@@ -34,3 +34,5 @@ cordova/node_modules
 *.p8
 *.p12
 
+# local AI assistant notes
+CLAUDE.md
