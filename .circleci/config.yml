@@ -43,9 +43,9 @@ aliases:
 # -----------------------------
 
 orbs:
-  azure-cli: circleci/azure-cli@1.2.2
-  browser-tools: circleci/browser-tools@2.2.0
-  ruby: circleci/ruby@2.5.4
+  azure-cli: circleci/azure-cli@2.1
+  browser-tools: circleci/browser-tools@2.4.2
+  ruby: circleci/ruby@3.0.0
 
 jobs:
   checkout_code:
@@ -131,7 +131,7 @@ jobs:
   www_deploy:
     <<: *defaults
     docker:
-      - image: cimg/ruby:3.4.3
+      - image: cimg/ruby:3.4.10
     steps:
       - restore_cache: *restore-repo-cache
       - restore_cache: *restore-bundler-cache
@@ -181,13 +181,13 @@ jobs:
   android_build_and_deploy:
     <<: *defaults
     docker:
-      - image: cimg/android:2025.10-browsers
+      - image: cimg/android:2026.08.1-browsers
     environment:
       JVM_OPTS: -Xmx3200m
       CIRCLE_ARTIFACTS: /home/circleci/code/cordova/platforms/android/build/outputs/apk
     steps:
       - ruby/install:
-          version: '3.4.3'
+          version: '3.4.10'
       - restore_cache: *restore-repo-cache
       - restore_cache: *restore-yarn-cache
       - restore_cache: *restore-bundler-cache
@@ -209,7 +209,7 @@ jobs:
       - run:
           name: Build android app
           command: |
-            npm install cordova@12
+            npm install cordova@13
             node rename_package.js
             cordova platform add android
             if [ "$ENVIRONMENT" == "production" ]; then
@@ -259,9 +259,9 @@ jobs:
       - run:
           name: Build iOS app
           command: |
-            npm install cordova@12
+            npm install cordova@13
             node rename_package.js
-            bundle exec yarn run cordova platform add ios@7
+            bundle exec yarn run cordova platform add ios@8
             UUID=`openssl smime -inform der -verify -noverify -in "/Users/distiller/Library/MobileDevice/Provisioning Profiles/app-${ENVIRONMENT}.mobileprovision" | grep -A 1 UUID | sed "s@.*<string>\(.*\)</string>.*@\1@" | tail -n 1`
             PACKAGE_TYPE=$(if [ "$ENVIRONMENT" == "production" ]; then echo app-store; else echo development; fi)
             CODE_SIGN_IDENTITY=$(if [ "$ENVIRONMENT" == "production" ]; then echo 'iPhone Distribution'; else echo 'iPhone Developer'; fi)
@@ -309,18 +309,18 @@ workflows:
             - package_dependencies
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|upgrade\/cordova-13)$/
       - android_build_and_deploy:
           requires:
             - tests
             - ember_cordova_build
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|upgrade\/cordova-13)$/
       - ios_build_and_deploy:
           requires:
             - tests
             - ember_cordova_build
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|upgrade\/cordova-13)$/
