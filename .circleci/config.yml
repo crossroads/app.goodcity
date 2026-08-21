@@ -186,8 +186,6 @@ jobs:
       JVM_OPTS: -Xmx3200m
       CIRCLE_ARTIFACTS: /home/circleci/code/cordova/platforms/android/build/outputs/apk
     steps:
-      - ruby/install:
-          version: '3.4.10'
       - restore_cache: *restore-repo-cache
       - restore_cache: *restore-yarn-cache
       - restore_cache: *restore-bundler-cache
@@ -202,7 +200,7 @@ jobs:
               echo 'export PATH=$PATH:/home/circleci/code/cordova/node_modules/.bin' >> $BASH_ENV
       - run: curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
       - azure-cli/install
-      - azure-cli/login-with-service-principal
+      - run: az login --service-principal --tenant ${AZURE_SP_TENANT} -u ${AZURE_SP} -p ${AZURE_SP_PASSWORD}
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n app-$ENVIRONMENT-google-services.json -f ~/code/cordova/google-services.json
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n goodcity.keystore -f ~/code/cordova/goodcity.keystore
       - run: az storage blob download --account-name $GOODCITY_STORAGE -c ci-app-secrets -n google-play-key.json -f ~/code/fastlane/google-play-key.json
@@ -323,4 +321,4 @@ workflows:
             - ember_cordova_build
           filters:
             branches:
-              only: /^(master|live|upgrade\/cordova-13)$/
+              only: /^(master|live)$/
