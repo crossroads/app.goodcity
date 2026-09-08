@@ -65,7 +65,7 @@ module.exports = function(environment) {
       OTP_RESEND_TIME: 60,
       CONTACT_EMAIL: "contact@goodcity.hk",
 
-      PRELOAD_TYPES: ["territory"],
+      PRELOAD_TYPES: ["territory", "goodcity_setting"],
       PRELOAD_AUTHORIZED_TYPES: [
         "donor_condition",
         "permission",

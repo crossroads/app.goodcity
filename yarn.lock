@@ -1829,6 +1829,14 @@ broccoli-stew@^1.2.0, broccoli-stew@^1.3.3:
     symlink-or-copy "^1.2.0"
     walk-sync "^0.3.0"
 
+broccoli-string-replace@^0.1.1:
+  version "0.1.2"
+  resolved "https://registry.yarnpkg.com/broccoli-string-replace/-/broccoli-string-replace-0.1.2.tgz#1ed92f85680af8d503023925e754e4e33676b91f"
+  integrity sha512-QHESTrrrPlKuXQNWsvXawSQbV2g34wCZ5oKgd6bntdOuN8VHxbg1BCBHqVY5HxXJhWelimgGxj3vI7ECkyij8g==
+  dependencies:
+    broccoli-persistent-filter "^1.1.5"
+    minimatch "^3.0.3"
+
 broccoli-uglify-sourcemap@^2.1.1:
   version "2.2.0"
   resolved "https://registry.yarnpkg.com/broccoli-uglify-sourcemap/-/broccoli-uglify-sourcemap-2.2.0.tgz#2ff49389bdf342a550c3596750ba2dde95a8f7d4"
@@ -2976,7 +2984,7 @@ ember-cli-babel@^5.0.0, ember-cli-babel@^5.1.3, ember-cli-babel@^5.1.5, ember-cl
     ember-cli-version-checker "^1.0.2"
     resolve "^1.1.2"
 
-ember-cli-babel@^6.0.0, ember-cli-babel@^6.0.0-beta.7, ember-cli-babel@^6.1.0, ember-cli-babel@^6.11.0, ember-cli-babel@^6.12.0, ember-cli-babel@^6.16.0, ember-cli-babel@^6.6.0, ember-cli-babel@^6.8.2:
+ember-cli-babel@^6.0.0, ember-cli-babel@^6.0.0-beta.7, ember-cli-babel@^6.1.0, ember-cli-babel@^6.10.0, ember-cli-babel@^6.11.0, ember-cli-babel@^6.12.0, ember-cli-babel@^6.16.0, ember-cli-babel@^6.6.0, ember-cli-babel@^6.8.2:
   version "6.18.0"
   resolved "https://registry.yarnpkg.com/ember-cli-babel/-/ember-cli-babel-6.18.0.tgz#3f6435fd275172edeff2b634ee7b29ce74318957"
   integrity sha512-7ceC8joNYxY2wES16iIBlbPSxwKDBhYwC8drU3ZEvuPDMwVv1KzxCNu1fvxyFEBWhwaRNTUxSCsEVoTd9nosGA==
@@ -3505,6 +3513,18 @@ ember-load-initializers@^1.0.0:
   integrity sha512-WiciFi8IXOqjyJ65M4iBNIthqcy4uXXQq5n3WxeMMhvJVk5JNSd9hynNECNz3nqfEYuZQ9c04UWkmFIQXRfl4Q==
   dependencies:
     ember-cli-babel "^6.6.0"
+
+ember-lodash@4.18.0:
+  version "4.18.0"
+  resolved "https://registry.yarnpkg.com/ember-lodash/-/ember-lodash-4.18.0.tgz#45de700d6a4f68f1cd62888d90b50aa6477b9a83"
+  integrity sha512-P/5JXlrFA1On6VnmLZyC88jiJ3n1/Ac2YACxe9wYIJJlNk4ThxCpwT/5HeFhuV9kAHNrhK6foLaNStelbYcCrw==
+  dependencies:
+    broccoli-debug "^0.6.1"
+    broccoli-funnel "^2.0.1"
+    broccoli-merge-trees "^2.0.0"
+    broccoli-string-replace "^0.1.1"
+    ember-cli-babel "^6.10.0"
+    lodash-es "^4.17.4"
 
 ember-qunit@^0.4.18:
   version "0.4.24"
@@ -6101,6 +6121,11 @@ lockfile@~1.0.1:
   dependencies:
     signal-exit "^3.0.2"
 
+lodash-es@^4.17.4:
+  version "4.18.1"
+  resolved "https://registry.yarnpkg.com/lodash-es/-/lodash-es-4.18.1.tgz#b962eeb80d9d983a900bf342961fb7418ca10b1d"
+  integrity sha512-J8xewKD/Gk22OZbhpOVSwcs60zhd95ESDwezOFuA3/099925PdHJ7OFHNTGtajL3AlZkykD32HykiMo+BIBI8A==
+
 lodash-node@^2.4.1:
   version "2.4.1"
   resolved "https://registry.yarnpkg.com/lodash-node/-/lodash-node-2.4.1.tgz#ea82f7b100c733d1a42af76801e506105e2a80ec"
@@ -6680,6 +6705,13 @@ minimatch@^2.0.1, minimatch@^2.0.3:
   integrity sha1-jQh8OcazjAAbl/ynzm0OHoCvusc=
   dependencies:
     brace-expansion "^1.0.0"
+
+minimatch@^3.0.3:
+  version "3.1.5"
+  resolved "https://registry.yarnpkg.com/minimatch/-/minimatch-3.1.5.tgz#580c88f8d5445f2bd6aa8f3cadefa0de79fbd69e"
+  integrity sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==
+  dependencies:
+    brace-expansion "^1.1.7"
 
 minimist@0.0.8:
   version "0.0.8"
@@ -8603,7 +8635,7 @@ sha@~2.0.1:
 
 "shared-goodcity@https://github.com/crossroads/shared.goodcity.git#master":
   version "0.0.0"
-  resolved "https://github.com/crossroads/shared.goodcity.git#61e5a47e882df8943945045105b8bdbe95475898"
+  resolved "https://github.com/crossroads/shared.goodcity.git#5cce11e4a03c0310a7a2ce595249815dd72f6ea5"
   dependencies:
     cryptiles "^4.1.2"
     ember-cli-babel "^5.1.6"
