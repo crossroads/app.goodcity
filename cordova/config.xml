@@ -30,6 +30,16 @@
         <preference name="SplashScreenDelay" value="3000" />
         <preference name="Orientation" value="portrait" />
         <preference name="AndroidXEnabled" value="true" />
+        <!--
+          @havesource/cordova-plugin-push's plugin.xml forces GradlePluginKotlinVersion=1.7.21,
+          which is older than the kotlin-stdlib (~1.8.22) pulled in transitively by the Firebase/
+          Play Services libraries its own floating FCM_VERSION=23.+ resolves to. That split leaves
+          kotlin-stdlib at 1.8.22 while kotlin-stdlib-jdk7/-jdk8 stay pinned at 1.7.21, and Gradle's
+          checkDebugDuplicateClasses fails since Kotlin 1.8 merged jdk7/jdk8 into kotlin-stdlib
+          itself. Overriding it here (config.xml preferences win over a plugin's forced value) to
+          cordova-android 14's own tested default keeps all three kotlin-stdlib artifacts in sync.
+        -->
+        <preference name="GradlePluginKotlinVersion" value="1.9.24" />
         <preference name="AndroidWindowSplashScreenBackground" value="#002352" />
         <preference name="AndroidWindowSplashScreenIconBackgroundColor" value="#002352" />
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/android/splashscreen-icon.png" />
