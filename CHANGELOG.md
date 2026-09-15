@@ -1,5 +1,9 @@
 # Donor App
 
+## v0.25.4
+
+- Update to disable in-app van booking
+
 ## v0.25.3
 
 - Update to Xcode 16.4 and Ruby 3.4.3
