@@ -183,7 +183,9 @@ jobs:
     docker:
       - image: cimg/android:2025.10-browsers
     environment:
-      JVM_OPTS: -Xmx3200m
+      # Cap the client JVM heap and disable the Gradle daemon and worker parallelism so the whole build runs
+      # in one bounded JVM instead of daemon + workers competing for the 4GB "medium" container.
+      GRADLE_OPTS: -Xmx1536m -Dorg.gradle.jvmargs=-Xmx1536m -Dorg.gradle.daemon=false -Dorg.gradle.workers.max=1
       CIRCLE_ARTIFACTS: /home/circleci/code/cordova/platforms/android/build/outputs/apk
     steps:
       - ruby/install:
