@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget id="hk.goodcity.appstaging" version="0.24.0" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+<widget id="hk.goodcity.appstaging" version="0.25.4" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
     <name>S. GoodCity</name>
     <description>The GoodCity initiative is a new way to donate quality goods in Hong Kong. See www.goodcity.hk for more details.</description>
     <author href="https://www.crossroads.org.hk">Crossroads</author>
@@ -30,15 +30,6 @@
         <preference name="SplashScreenDelay" value="3000" />
         <preference name="Orientation" value="portrait" />
         <preference name="AndroidXEnabled" value="true" />
-        <!--
-          @havesource/cordova-plugin-push's plugin.xml forces GradlePluginKotlinVersion=1.7.21,
-          which is older than the kotlin-stdlib (~1.8.22) pulled in transitively by the Firebase/
-          Play Services libraries its own floating FCM_VERSION=23.+ resolves to. That split leaves
-          kotlin-stdlib at 1.8.22 while kotlin-stdlib-jdk7/-jdk8 stay pinned at 1.7.21, and Gradle's
-          checkDebugDuplicateClasses fails since Kotlin 1.8 merged jdk7/jdk8 into kotlin-stdlib
-          itself. Overriding it here (config.xml preferences win over a plugin's forced value) to
-          cordova-android 14's own tested default keeps all three kotlin-stdlib artifacts in sync.
-        -->
         <preference name="GradlePluginKotlinVersion" value="1.9.24" />
         <preference name="AndroidWindowSplashScreenBackground" value="#002352" />
         <preference name="AndroidWindowSplashScreenIconBackgroundColor" value="#002352" />

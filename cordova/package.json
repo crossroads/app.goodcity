@@ -1,6 +1,6 @@
 {
   "name": "hk.goodcity.appstaging",
-  "version": "0.24.0",
+  "version": "0.25.4",
   "displayName": "S. GoodCity",
   "dependencies": {
     "cordova": "^13.0.0",
