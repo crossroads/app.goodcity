@@ -237,7 +237,16 @@ jobs:
       HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
       - checkout
-      - run: brew install --overwrite azure-cli
+      - run:
+          name: Install Azure CLI
+          command: |
+            # The macOS image ships ca-certificates pre-installed and linked; azure-cli
+            # depends on it too, and brew refuses to silently swap the active link.
+            # Relink it first so the dependency install below doesn't conflict.
+            if brew list --versions ca-certificates >/dev/null 2>&1; then
+              brew link --overwrite ca-certificates
+            fi
+            brew install --overwrite azure-cli
       - attach_workspace:
           at: ~/code
       - run:
