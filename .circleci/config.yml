@@ -240,13 +240,18 @@ jobs:
       - run:
           name: Install Azure CLI
           command: |
-            # The macOS image ships ca-certificates pre-installed and linked; azure-cli
-            # depends on it too, and brew refuses to silently swap the active link.
-            # Relink it first so the dependency install below doesn't conflict.
-            if brew list --versions ca-certificates >/dev/null 2>&1; then
-              brew link --overwrite ca-certificates
-            fi
-            brew install --overwrite azure-cli
+            # The macOS image pre-installs and pre-links several of azure-cli's
+            # dependencies (e.g. ca-certificates) at older versions. brew won't
+            # silently swap an active link to the newer version it wants to pour,
+            # so it aborts with "another version is already linked". Unlink
+            # whichever dependencies are already present first so the install can
+            # link the versions it actually needs.
+            for pkg in $(brew deps azure-cli); do
+              if brew list --versions "$pkg" >/dev/null 2>&1; then
+                brew unlink "$pkg"
+              fi
+            done
+            brew install azure-cli
       - attach_workspace:
           at: ~/code
       - run:
