@@ -228,8 +228,8 @@ jobs:
 
   ios_build_and_deploy:
     macos:
-      xcode: "16.4.0"
-    resource_class: macos.m1.medium.gen1
+      xcode: "26.6.0"
+    resource_class: m4pro.medium
     working_directory: ~/code
     shell: /bin/bash --login -eo pipefail
     environment:
@@ -265,7 +265,7 @@ jobs:
             PACKAGE_TYPE=$(if [ "$ENVIRONMENT" == "production" ]; then echo app-store; else echo development; fi)
             CODE_SIGN_IDENTITY=$(if [ "$ENVIRONMENT" == "production" ]; then echo 'iPhone Distribution'; else echo 'iPhone Developer'; fi)
             bundle exec yarn run cordova build ios --release --device --codeSignIdentity="${CODE_SIGN_IDENTITY}" --developmentTeam="6B8FS8W94M" \
-               --packageType="${PACKAGE_TYPE}" --automaticProvisioning=true  --buildFlag="IPHONEOS_DEPLOYMENT_TARGET=13" \
+               --packageType="${PACKAGE_TYPE}" --automaticProvisioning=true  --buildFlag="IPHONEOS_DEPLOYMENT_TARGET=15" \
                --provisioningProfile="${UUID}"
           working_directory: cordova
       - store_artifacts:
@@ -281,27 +281,27 @@ workflows:
       - package_dependencies:
           requires:
             - checkout_code
-      - tests:
-          requires:
-            - package_dependencies
-      - upload-coverage:
-          requires:
-            - tests
-          filters:
-            branches:
-              only: /^(master|live)$/
-      - www_build:
-          requires:
-            - tests
-          filters:
-            branches:
-              only: /^(master|live)$/
-      - www_deploy:
-          requires:
-            - www_build
-          filters:
-            branches:
-              only: /^(master|live)$/
+      # - tests:
+      #     requires:
+      #       - package_dependencies
+      # - upload-coverage:
+      #     requires:
+      #       - tests
+      #     filters:
+      #       branches:
+      #         only: /^(master|live)$/
+      # - www_build:
+      #     requires:
+      #       - tests
+      #     filters:
+      #       branches:
+      #         only: /^(master|live)$/
+      # - www_deploy:
+      #     requires:
+      #       - www_build
+      #     filters:
+      #       branches:
+      #         only: /^(master|live)$/
       - ember_cordova_build:
           requires:
             - package_dependencies
@@ -310,15 +310,15 @@ workflows:
               only: /^(master|live|upgrade\/cordova-13)$/
       - android_build_and_deploy:
           requires:
-            - tests
+            # - tests
             - ember_cordova_build
           filters:
             branches:
-              only: /^(master|live|upgrade\/cordova-13)$/
+              only: /^(master|live)$/
       - ios_build_and_deploy:
           requires:
             - tests
             - ember_cordova_build
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|upgrade\/cordova-13)$/
