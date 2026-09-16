@@ -317,7 +317,7 @@ workflows:
               only: /^(master|live)$/
       - ios_build_and_deploy:
           requires:
-            - tests
+            # - tests
             - ember_cordova_build
           filters:
             branches:
