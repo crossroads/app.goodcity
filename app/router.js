@@ -51,6 +51,9 @@ Router.map(function() {
 
             this.route("drop_off_schedule");
 
+            this.route("book_self_arranged_van");
+            this.route("confirm_self_arranged_van");
+
             this.route("cancel_booking");
           }
         );
