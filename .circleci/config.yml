@@ -240,12 +240,20 @@ jobs:
       - run:
           name: Install Azure CLI
           command: |
-            # The macOS image pre-installs and pre-links several of azure-cli's
-            # dependencies (e.g. ca-certificates) at older versions. brew won't
-            # silently swap an active link to the newer version it wants to pour,
-            # so it aborts with "another version is already linked". Unlink
-            # whichever dependencies are already present first so the install can
-            # link the versions it actually needs.
+            # HOMEBREW_NO_AUTO_UPDATE only skips the *automatic* pre-command
+            # update check; it doesn't stop us calling `brew update` ourselves,
+            # which we need here: the image's cached Homebrew core is old
+            # enough that it doesn't understand a newer formula's install-step
+            # DSL, crashing with "unknown install step: run" while installing
+            # ca-certificates. An explicit update brings Homebrew's own code
+            # in sync with the formula/bottle definitions it fetches.
+            brew update
+            # The macOS image also pre-installs and pre-links several of
+            # azure-cli's dependencies (e.g. ca-certificates) at older
+            # versions. brew won't silently swap an active link to the newer
+            # version it wants to pour, so it aborts with "another version is
+            # already linked". Unlink whichever dependencies are already
+            # present first so the install can link the versions it needs.
             for pkg in $(brew deps azure-cli); do
               if brew list --versions "$pkg" >/dev/null 2>&1; then
                 brew unlink "$pkg"
