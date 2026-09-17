@@ -7,7 +7,7 @@
    https://cordova.apache.org/docs/en/latest/core/features/splashscreen/index.html?#ios-specific-information
 */
 body {
-  padding: env(safe-area-inset-top, 0px);
+  padding-top: env(safe-area-inset-top, 0px);
 }
 
 /* template specific */
