@@ -103,5 +103,7 @@ Install the built APK onto the emulator:
 
 ```bash
 adb install -r platforms/android/app/build/outputs/apk/debug/app-debug.apk
+adb devices # if more than one emulator running
+adb -s emulator-5556 install -r platforms/android/app/build/outputs/apk/debug/app-debug.apk
 adb uninstall hk.goodcity.appstaging # if needing to uninstall first
 ```

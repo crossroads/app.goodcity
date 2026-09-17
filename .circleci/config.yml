@@ -336,7 +336,7 @@ workflows:
             - ember_cordova_build
           filters:
             branches:
-              only: /^(master|live)$/
+              only: /^(master|live|upgrade\/cordova-13)$/
       - ios_build_and_deploy:
           requires:
             # - tests
