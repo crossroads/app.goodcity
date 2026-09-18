@@ -1,5 +1,10 @@
 # Donor App
 
+## v0.26.0
+
+- Update to cordova-android 15
+- Upodate to cordova-ios 8 (Xcode 26)
+
 ## v0.25.4
 
 - Update to disable in-app van booking
