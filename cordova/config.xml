@@ -11,6 +11,8 @@
     <allow-navigation href="http://localhost/*" />
     <allow-navigation href="https://localhost/*" />
     <preference name="DisallowOverscroll" value="true" />
+    <preference name="StatusBarBackgroundColor" value="#002352" />
+    <preference name="StatusBarStyle" value="lightcontent" />
     <allow-intent href="https://www.goodcity.hk/*" />
     <allow-intent href="https://maps.google.com/*" />
     <allow-intent href="https://www.crossroads.org.hk/*" />
