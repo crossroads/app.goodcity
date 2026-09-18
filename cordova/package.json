@@ -7,7 +7,7 @@
     "yarn": "^1.22.22"
   },
   "devDependencies": {
-    "@havesource/cordova-plugin-push": "github:havesource/cordova-plugin-push#d50a41b8edd6d159914814d16ae8f486c29698ca",
+    "@havesource/cordova-plugin-push": "^7.0.0",
     "com.nrswolf.cordova.push-notifications-status": "github:nrswolf/cordova-plugin-push-notifications-status#d4661da2369425b4227010f8a88350de1f811ba9",
     "cordova-android": "^15.1.0",
     "cordova-android-support-gradle-release": "^3.0.1",
@@ -32,8 +32,8 @@
     ],
     "plugins": {
       "@havesource/cordova-plugin-push": {
-        "ANDROIDX_CORE_VERSION": "1.6.+",
-        "FCM_VERSION": "23.+"
+        "ANDROIDX_CORE_VERSION": "1.16.+",
+        "FCM_VERSION": "24.+"
       },
       "com.nrswolf.cordova.push-notifications-status": {},
       "cordova-android-support-gradle-release": {
@@ -47,7 +47,6 @@
       },
       "cordova-plugin-inappbrowser": {},
       "cordova-plugin-network-information": {},
-      "cordova-plugin-statusbar": {},
       "es6-promise-plugin": {},
       "cordova-launch-review": {},
       "cordova-plugin-apprate": {

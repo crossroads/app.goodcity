@@ -27,7 +27,6 @@
         <preference name="SplashScreenDelay" value="3000" />
         <preference name="Orientation" value="portrait" />
         <preference name="AndroidXEnabled" value="true" />
-        <preference name="GradlePluginKotlinVersion" value="1.9.24" />
         <preference name="AndroidWindowSplashScreenBackground" value="#002352" />
         <preference name="AndroidWindowSplashScreenIconBackgroundColor" value="#002352" />
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="res/android/splashscreen-icon.png" />
