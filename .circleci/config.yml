@@ -140,7 +140,7 @@ jobs:
           at: ~/code
       - run: mv dist-www/ dist
       - azure-cli/install
-      - azure-cli/login-with-service-principal
+      - run: az login --service-principal --tenant ${AZURE_SP_TENANT} -u ${AZURE_SP} -p ${AZURE_SP_PASSWORD}
       - run:
           name: Upload to www server + azure
           command: |
