@@ -88,5 +88,11 @@
         <edit-config file="*-Info.plist" mode="merge" target="NSPhotoLibraryAddUsageDescription">
             <string>Needs photo library access to save donation photos.</string>
         </edit-config>
+        <edit-config file="*-Info.plist" mode="merge" target="UIViewControllerBasedStatusBarAppearance">
+            <false />
+        </edit-config>
+        <edit-config file="*-Info.plist" mode="merge" target="UIStatusBarStyle">
+            <string>UIStatusBarStyleLightContent</string>
+        </edit-config>
     </platform>
 </widget>
