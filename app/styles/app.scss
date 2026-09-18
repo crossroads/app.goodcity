@@ -3,13 +3,6 @@
 @import "date_time_picker";
 @import "porterage_charges";
 
-/* viewport fix for iOS devices with button overlays
-   https://cordova.apache.org/docs/en/latest/core/features/splashscreen/index.html?#ios-specific-information
-*/
-body {
-  padding: env(safe-area-inset-top, 0px);
-}
-
 /* template specific */
 @import "templates/tour";
 @import "templates/account";
