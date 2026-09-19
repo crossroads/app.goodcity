@@ -1,8 +1,6 @@
 require 'json'
 require_relative "./release_utils"
 
-update_fastlane
-
 default_platform :android
 
 class FastlaneCore::Shell
