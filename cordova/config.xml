@@ -52,7 +52,7 @@
     <platform name="ios">
         <preference name="SwiftVersion" value="5" />
         <preference name="deployment-target" value="15.0" />
-        <preference name="Orientation" value="portrait" />
+        <preference name="Orientation" value="default" />
         <preference name="Fullscreen" value="true" />
         <icon height="16" src="res/ios/Icon-App-16x16@1x.png" width="16" />
         <icon height="32" src="res/ios/Icon-App-16x16@2x.png" width="32" />
@@ -88,15 +88,6 @@
         <splash src="res/ios/splash-screen@2x~universal~anyany.png" />
         <edit-config file="*-Info.plist" mode="add" target="ITSAppUsesNonExemptEncryption">
             <false />
-        </edit-config>
-        <!--
-          iOS/iPadOS require an app to support all four orientations unless it opts out of
-          iPad multitasking. This app's UI is portrait-only by design, so opt out of
-          multitasking rather than adding landscape support. Without this, App Store Connect
-          rejects the upload with error 90474 ("Invalid bundle... UISupportedInterfaceOrientations").
-        -->
-        <edit-config file="*-Info.plist" mode="merge" target="UIRequiresFullScreen">
-            <true />
         </edit-config>
         <edit-config file="*-Info.plist" mode="merge" target="NSCameraUsageDescription">
             <string>To enable you to photograph items for donation.</string>
