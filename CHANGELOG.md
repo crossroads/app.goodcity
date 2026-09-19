@@ -1,5 +1,9 @@
 # Donor App
 
+## v0.26.1
+
+- Fix iOS orientation handling for App Store multitasking compliance
+
 ## v0.26.0
 
 - Update to cordova-android 15
