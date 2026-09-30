@@ -27,6 +27,8 @@
           {{t 'offer.offer_details.is_collection'}}
         {{else if delivery.isDropOff}}
           {{t 'offer.offer_details.is_drop_off'}}
+        {{else if delivery.isSelfArrangedVan}}
+          {{t 'offer.offer_details.is_self_arranged_van'}}
         {{else if delivery.isGogovan}}
           {{#if delivery.gogovanOrder.isActive}}
             {{t 'offer.offer_details.is_gogovan_confirm'}}

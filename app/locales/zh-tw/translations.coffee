@@ -85,6 +85,7 @@ I18nTranslationsZhTw =
         "van_confirmed": "已確認貨車安排"
         "picked_up": "已經提取"
         "drop_off" : "親身送到十字路會"
+        "self_arranged_van" : "請於GoGoX或Lalamove預約貨車"
         "alternate" : "已預約十字路會收集站"
         "awaiting_driver" : "正在等候司機的資料"
         "driver_name" : "司機姓名"
@@ -141,6 +142,7 @@ I18nTranslationsZhTw =
         "in_review_status": "您捐出的物品正由 {{firstName}}審查"
         "is_collection": "收集站"
         "is_drop_off": "接收地點"
+        "is_self_arranged_van": "自行安排貨車"
         "is_gogovan_order": "已預約貨車"
         "driver_completed": "司機已確認預約"
         "is_gogovan_confirm": "已確認貨車安排"
@@ -249,7 +251,7 @@ I18nTranslationsZhTw =
           "supervisors": "審查員亦能夠即時知會專業的管理員，他們大多擁有五年或以上在香港處理捐贈物資的經驗。他們處理過很多罕見的物資捐獻，例如是商業用披薩烤箱、十萬件全新西裝、大量假花裝飾等。面對這些古怪又實用的物資，他們非常清楚該如何處理。"
 
         "answer3":
-          "gogovan": "<b>租用貨車，快捷妥當：</b> 通過我們的應用程式，您能夠預約貨車，這是運送物資的最快方法。您直接付款給司機。"
+          "gogovan": "<b>自行租用貨車：</b> 於GoGoX或Lalamove應用程式內預約貨車，直接向司機付款，並於好人好市告訴我們貨車何時到達。"
 
           "drop_off": "<b>親自運送：</b> 通過我們的應用程式，您能夠預約時間，將物資親自送到我們位於屯門的辦公室。"
 
