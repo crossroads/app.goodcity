@@ -85,6 +85,7 @@ I18nTranslationsEn =
         "van_confirmed": "Van confirmed"
         "picked_up": "Picked up"
         "drop_off" : "You will deliver to Crossroads"
+        "self_arranged_van" : "Please book your van in GoGoX or Lalamove"
         "alternate" : "Crossroads collection booked"
         "awaiting_driver" : "Awaiting driver details."
         "driver_name" : "Driver name"
@@ -141,6 +142,7 @@ I18nTranslationsEn =
         "in_review_status": "Your offer is being reviewed by {{firstName}}."
         "is_collection": "Collection"
         "is_drop_off": "Drop-off"
+        "is_self_arranged_van": "Self-arranged van"
         "is_gogovan_order": "Van ordered"
         "is_gogovan_confirm": "Van confirmed"
         "driver_completed": "Driver completed"
@@ -249,7 +251,7 @@ I18nTranslationsEn =
           "supervisors": "Reviewers also have live access to expert supervisors. Our supervisors have typically been facilitating donated goods in Hong Kong for at least five years. They know how to evaluate unusual offers: like a commercial pizza oven, 100,000 new business suits, boxes of fake flowers and all manner of weird and wonderful things."
 
         "answer3":
-          "gogovan": "<b>Fast commercial van hire:</b> from within our app you can book a truck. This is the fastest method and you pay the driver directly."
+          "gogovan": "<b>Hire a van yourself:</b> book a GoGoX or Lalamove van in their app, pay the driver directly, and tell us in GoodCity when it will arrive."
 
           "drop_off": "<b>Deliver yourself:</b> through the app you can book a time to drop the items at our Tuen Mun facility yourself."
 
