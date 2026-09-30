@@ -6,6 +6,14 @@ All notable changes to the Donor app are documented here, newest first.
 
 ---
 
+## v0.27.0
+
+- ✨ Add "Arrange your own van" delivery option — donors book GoGoX or Lalamove themselves
+- 🐛 Fix styles on the van booking screens
+- 🐛 Update Plan Transport tests for the new van option
+- 🗑️ Remove PhantomJS and Travis config
+- 🗑️ Remove the no-longer-needed Gradle version pin
+
 ## v0.26.1
 
 - 🐛 Fix iOS orientation handling for App Store multitasking compliance
